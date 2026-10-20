@@ -8,3 +8,4 @@ import './draw.test.js';
 import './game.test.js';
 import './records.test.js';
 import './github.test.js';
+import './store.test.js';
