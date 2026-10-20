@@ -4,3 +4,4 @@ import './hash.test.js';
 import './content.test.js';
 import './questions.test.js';
 import './check.test.js';
+import './draw.test.js';

@@ -48,3 +48,12 @@ export async function questionHash(q) {
 export async function optionHashes(q) {
   return Promise.all(displayedTexts(q).map(async (t) => short(await sha256Hex(t), 8)));
 }
+
+// 표시 순서를 뺀 문제 내용의 키 — 재도전이 "같은 문제"인지 비교(설계 §4.2)
+const norm = (s) => String(s).replace(/\s+/g, ' ').trim();
+export function questionKey(q) {
+  const sorted = (arr) => (arr || []).map(norm).sort();
+  return canonical({ form: q.form, text: norm(q.text), passage: q.passage ? norm(q.passage) : null,
+    statements: sorted(q.statements), texts: sorted(displayedTexts(q)),
+    pairs: (q.pairs || []).map((p) => p.map(norm)).sort() });
+}
