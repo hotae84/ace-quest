@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>테스트</title></head>
+<body>
+<pre id="out" style="font-size:14px;white-space:pre-wrap"></pre>
+<script type="module">
+  import { run } from './tests/harness.js';
+  import './tests/all.js';
+  const out = document.getElementById('out');
+  run((line) => { out.textContent += line + '\n'; });
+</script>
+</body>
+</html>
