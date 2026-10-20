@@ -5,3 +5,4 @@ import './content.test.js';
 import './questions.test.js';
 import './check.test.js';
 import './draw.test.js';
+import './game.test.js';
