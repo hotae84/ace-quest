@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <!-- WebKit은 샌드박스(불투명 origin) 문서에서 connect-src 'self'를 페이지 URL과 맞추지 않으므로 배포 호스트와 로컬 호스트를 명시한다 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://hotae84.github.io https://cdn.jsdelivr.net http://localhost:*; style-src 'self'">
+  <title>재현</title>
+</head>
+<body>
+  <p id="msg"></p>
+  <script type="module" src="js/replay.js"></script>
+</body>
+</html>

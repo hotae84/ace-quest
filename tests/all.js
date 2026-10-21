@@ -10,3 +10,4 @@ import './records.test.js';
 import './github.test.js';
 import './store.test.js';
 import './app-flow.test.js';
+import './admin.test.js';
