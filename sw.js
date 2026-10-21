@@ -4,7 +4,7 @@ const CACHE = `aq-${APP_VERSION}`;
 const PRECACHE = [
   './', 'index.html', 'admin.html', 'replay.html', 'manifest.webmanifest',
   'css/app.css', 'css/admin.css',
-  'js/app.js', 'js/admin.js', 'js/replay.js', 'js/check.js', 'js/content.js', 'js/dom.js', 'js/draw.js', 'js/game.js', 'js/github.js',
+  'js/app.js', 'js/admin.js', 'js/admin-core.js', 'js/replay.js', 'js/check.js', 'js/content.js', 'js/dom.js', 'js/draw.js', 'js/game.js', 'js/github.js',
   'js/hash.js', 'js/records.js', 'js/rng.js', 'js/store.js', 'js/sw-client.js',
   'js/questions/index.js', 'js/questions/mcq.js', 'js/questions/ox.js', 'js/questions/blank.js', 'js/questions/order.js', 'js/questions/match.js',
   'js/questions/render/choice.js', 'js/questions/render/ox.js', 'js/questions/render/order.js', 'js/questions/render/match.js',
