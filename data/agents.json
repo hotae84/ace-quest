@@ -1,0 +1,10 @@
+[
+  { "id": "jett", "name": "제트", "color": "#7fd3ff", "line": "바람처럼 빠르게." },
+  { "id": "sage", "name": "세이지", "color": "#6ee7c8", "line": "차분하게, 하나씩." },
+  { "id": "phoenix", "name": "피닉스", "color": "#ff8a4c", "line": "내가 해결할게." },
+  { "id": "sova", "name": "소바", "color": "#8fb4ff", "line": "흔적은 남는다." },
+  { "id": "reyna", "name": "레이나", "color": "#c77dff", "line": "지금은 내 시간." },
+  { "id": "killjoy", "name": "킬조이", "color": "#ffd166", "line": "계산은 끝났어." },
+  { "id": "omen", "name": "오멘", "color": "#9aa5ff", "line": "그림자 속에서." },
+  { "id": "cypher", "name": "사이퍼", "color": "#e8e4d8", "line": "다 보고 있었다." }
+]

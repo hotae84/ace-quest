@@ -9,3 +9,4 @@ import './game.test.js';
 import './records.test.js';
 import './github.test.js';
 import './store.test.js';
+import './app-flow.test.js';
