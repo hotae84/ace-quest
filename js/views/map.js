@@ -24,7 +24,8 @@ export function renderMap(app) {
         h('button', { class: 'btn primary grow', onclick: () => app.startRound(z.id, 'normal') }, '출격'),
         bonus.open ? h('button', { class: 'btn grow bonus-btn', onclick: () => app.startRound(z.id, 'bonus') }, '보너스 작전') : null) : null);
   });
-  const red = (st.cache.redemptions || []).slice(-5).reverse();
+  const red = (st.cache.player === st.settings.playerId ? st.cache.redemptions || [] : []).slice(-5).reverse();
+  const unfinished = st.round && st.round.finished === null;
   return h('div', { class: 'page map' },
     h('header', { class: 'hud' },
       agentBadge(agent, 'md'),
@@ -37,7 +38,8 @@ export function renderMap(app) {
     h('section', { class: 'card exchange' },
       h('div', { class: 'row between' }, h('span', {}, `다음 환전(${ex.label})까지`), h('strong', {}, `${fmt(d.balance)} / ${fmt(ex.creds)}`)),
       h('div', { class: 'bar' }, h('div', { class: 'bar-fill', style: `width:${pct}%` }))),
-    h('button', { class: 'btn block all', onclick: () => app.startRound(null, 'normal') }, '전체 출격'),
+    unfinished ? h('button', { class: 'btn block primary', onclick: () => app.resume() }, '▶ 이어 풀기 (진행 중인 라운드)') : null,
+    h('button', { class: 'btn block all', onclick: () => app.startRound(null, 'normal') }, unfinished ? '전체 출격 (진행 중 라운드는 이탈)' : '전체 출격'),
     zones,
     h('section', { class: 'card' },
       h('h2', {}, '환전 내역'),

@@ -15,9 +15,9 @@ test('KEYS', () => eq(KEYS, { settings: 'aq.settings', queue: 'aq.queue', cache:
 
 test('기본값', () => {
   const s = new Store(fakeStorage());
-  eq(s.getSettings(), { token: null, owner: 'hotae84', repo: 'ace-quest-scores', playerId: null, nick: null, agent: null, remember: false, everSynced: false });
+  eq(s.getSettings(), { token: null, owner: 'hotae84', repo: 'ace-quest-scores', playerId: null, nick: null, agent: null, remember: false, syncedPlayers: [] });
   eq(s.getQueue(), []);
-  eq(s.getCache(), { lines: [], redemptions: [], fetchedAt: null });
+  eq(s.getCache(), { player: null, lines: [], redemptions: [], fetchedAt: null });
   eq(s.getRound(), null);
   eq(s.getQuarantine(), []);
   eq(s.getAdminChecks(), {});
@@ -48,7 +48,7 @@ test('깨진 JSON·형식 불일치는 기본값 + broken 기록', () => {
   st.m.set(KEYS.settings, '[1,2]');
   const s = new Store(st);
   eq(s.getQueue(), []);
-  eq(s.getCache(), { lines: [], redemptions: [], fetchedAt: null });
+  eq(s.getCache(), { player: null, lines: [], redemptions: [], fetchedAt: null });
   eq(s.getSettings().owner, 'hotae84');
   eq(s.broken.slice().sort(), [KEYS.cache, KEYS.queue, KEYS.settings]);
 });

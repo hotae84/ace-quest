@@ -10,10 +10,10 @@ function fakeStorage() {
   const m = new Map();
   return { m, getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { m.set(k, String(v)); }, removeItem: (k) => { m.delete(k); } };
 }
-function make({ storage = fakeStorage(), index: ix = index, failQueue = false } = {}) {
+function make({ storage = fakeStorage(), index: ix = index, failQueue = false, player = 'p1' } = {}) {
   const store = new Store(storage);
   if (failQueue) store.setQueue = () => ({ ok: false });
-  store.setSettings({ playerId: 'p1', nick: '테스터', agent: 'jett' });
+  store.setSettings({ playerId: player, nick: '테스터', agent: 'jett' });
   const app = createApp({ index: ix, store, repo: null, agents, ticketRng: () => 0, seed: (() => { let s = 1; return () => s++; })(), now: () => '2026-10-25T10:00:00+09:00' });
   return { app, store, storage };
 }
@@ -140,4 +140,67 @@ test('hint: 잔액 부족이면 거부, 충분하면 사용', async () => {
   app.state.derived.hintPts = 3;
   eq(app.hint().ok, true);
   ok(app.state.round.q[0].hint);
+});
+
+test('#3 보너스 작전은 자격이 있을 때만 시작된다', async () => {
+  const { app } = make();
+  await app.boot();
+  eq(await app.startRound('Z1', 'bonus'), false);
+  eq(app.state.round, null);
+  for (const c of cards) app.state.derived.mastery.set(c.id, 2);
+  ok(app.bonusAvailable('Z1'));
+  eq(await app.startRound('Z1', 'bonus'), true);
+  eq(app.state.round.mode, 'bonus');
+});
+
+test('#4 다른 플레이어의 저장 라운드는 이탈 처리되고 그 플레이어 이름으로 큐에 남는다', async () => {
+  const { app, store, storage } = make();
+  await app.boot();
+  await app.startRound('Z1', 'normal');
+  const again = make({ storage, player: 'p2' });
+  await again.app.boot();
+  eq(again.app.state.round, null);
+  const q = again.store.getQueue();
+  eq(q.length, 1); eq(q[0].player, 'p1'); eq(q[0].finished, false);
+  eq(again.app.state.derived.rounds, 0, 'p2 상태에 p1 기록이 섞이지 않는다');
+});
+
+test('#5 격리된 id는 상태 계산에서 빠진다', async () => {
+  const { app, store, storage } = make();
+  await app.boot();
+  await app.startRound('Z1', 'normal');
+  await playAll(app);
+  ok(app.state.derived.earned > 0);
+  store.addQuarantine([{ id: store.getQueue()[0].id, a: {}, b: {} }]);
+  const again = make({ storage });
+  await again.app.boot();
+  eq(again.app.state.derived.earned, 0);
+});
+
+test('#13 재도전을 끝낸 뒤 재시작하면 재도전 판정 화면으로 복귀한다', async () => {
+  const { app, storage } = make();
+  await app.boot();
+  await app.startRound('Z1', 'normal');
+  const q = app.state.question;
+  const bad = q.form === 'order' || q.form === 'match' ? q.answer.slice().reverse() : wrong(app);
+  await app.submit(bad);
+  await app.startRetry();
+  await app.submitRetry([app.state.retryQuestion.answer].flat());
+  const again = make({ storage });
+  await again.app.boot();
+  eq(again.app.state.view, 'verdict');
+  ok(again.app.state.inRetry && again.app.state.retryQuestion);
+});
+
+test('#12 resume은 진행 중 시도에 맞는 화면으로 돌아간다', async () => {
+  const { app } = make();
+  await app.boot();
+  await app.startRound('Z1', 'normal');
+  app.go('map');
+  app.resume();
+  eq(app.state.view, 'battle');
+  await app.submit(correct(app));
+  app.go('map');
+  app.resume();
+  eq(app.state.view, 'verdict');
 });

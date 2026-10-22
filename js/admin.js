@@ -22,6 +22,10 @@ let rawText = {};
 let checksStatus = {};
 let busy = false;
 let lastError = '';
+let lastInputs = null;
+const regrades = {};
+const pendingRedeem = {};
+let checkFailures = {};
 
 // ---- 재현 샌드박스 ----
 const iframe = h('iframe', { title: '재현기', sandbox: 'allow-scripts', src: 'replay.html' });
@@ -64,13 +68,19 @@ async function loadAll() {
       recordsByPlayer[p.id] = r.missing ? [] : parseJsonl(r.text);
       const red = await repo.readRaw(`redemptions/${p.id}.jsonl`);
       redemptionsByPlayer[p.id] = red.missing ? [] : parseJsonl(red.text);
-      if (!r.missing && isLedgerPath(path)) {
-        try { appendChecks[p.id] = await repo.appendOnlyCheck(path); } catch { /* 검사 실패는 표시만 */ }
-        cps[p.id] = await checkpointStatus(rawText[p.id], saved[path] || null);
+      if (isLedgerPath(path)) {
+        if (r.missing) {
+          // 기준점이 있는데 원장이 사라졌으면 이력 후퇴로 본다(§6.4 ⑦)
+          cps[p.id] = saved[path] ? 'history-rewound' : 'unchecked';
+        } else {
+          try { appendChecks[p.id] = await repo.appendOnlyCheck(path); delete checkFailures[p.id]; } catch (e) { checkFailures[p.id] = e.message || '검사 실패'; }
+          cps[p.id] = await checkpointStatus(rawText[p.id], saved[path] || null);
+        }
       }
     }
     checksStatus = cps;
-    summary = await summarize(players, recordsByPlayer, redemptionsByPlayer, { appendChecks, checkpointStatus: cps, quarantine: store.getQuarantine() });
+    lastInputs = { players, recordsByPlayer, redemptionsByPlayer, appendChecks, cps };
+    summary = await summarize(players, recordsByPlayer, redemptionsByPlayer, { appendChecks, checkpointStatus: cps, quarantine: store.getQuarantine(), regrades });
   } catch (e) {
     lastError = `불러오기 실패: ${e.message}`;
   } finally { busy = false; render(); }
@@ -86,13 +96,34 @@ async function markChecked(playerId) {
   render();
 }
 
-async function redeem(playerId, form) {
+// 같은 제출은 응답이 끊겨 다시 눌러도 같은 작업 id로 보내 이중 차감을 막는다
+async function redeem(playerId, form, button) {
   try {
-    const line = redemptionLine({ creds: form.creds.value, label: form.label.value, memo: form.memo.value });
-    await appendRedemption(repo, playerId, line);
-    toast('환전을 기록했어요');
+    const key = `${playerId}|${form.creds.value}|${form.label.value}|${form.memo.value}`;
+    pendingRedeem[key] = pendingRedeem[key] || crypto.randomUUID();
+    const line = redemptionLine({ creds: form.creds.value, label: form.label.value, memo: form.memo.value, id: pendingRedeem[key] });
+    button.disabled = true;
+    const r = await appendRedemption(repo, playerId, line);
+    delete pendingRedeem[key];
+    toast(r.skipped ? '이미 기록된 환전이에요' : '환전을 기록했어요');
     await loadAll();
-  } catch (e) { toast(`환전 기록 실패: ${e.message}`); }
+  } catch (e) { button.disabled = false; toast(`환전 기록 실패: ${e.message} — 다시 누르면 같은 작업으로 재시도해요`); }
+}
+
+// 원 시도·재도전에 같은 검증: 해시 대조 + 미응답은 채점 비교 제외
+function compareAttempt(res, t, label) {
+  if (res.error) return { lines: [`${label}검증 불가 (${res.error})`], bad: res.error !== 'timeout' && res.error !== 'unavailable' };
+  const same = res.qh === t.qh && JSON.stringify(res.oh) === JSON.stringify(t.oh);
+  const lines = [`${label}문제: ${res.text}`];
+  if (res.passage) lines.push(`  📜 ${res.passage}`);
+  if (res.statements) lines.push(...res.statements.map((s, i) => `  ${['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'][i]}. ${s}`));
+  if (res.pairs) lines.push(`  왼쪽: ${res.pairs.join(' / ')}`);
+  lines.push(...res.options.map((o, i) => `  ${i + 1}. ${o}`));
+  let bad = !same;
+  if (t.a === null) lines.push(`  미응답 — 채점 비교 없음`);
+  else { const okMatch = res.ok === t.ok; bad = bad || !okMatch; lines.push(`  기록 답 ${JSON.stringify(t.a)} → 재채점 ${res.ok ? '정답' : '오답'} / 기록 ok=${t.ok} ${okMatch ? '✓' : '✗ 불일치'}`); }
+  lines.push(`  해시 ${same ? '일치 ✓' : '불일치 ✗'}`);
+  return { lines, bad };
 }
 
 async function replayRound(line, q, out) {
@@ -100,18 +131,23 @@ async function replayRound(line, q, out) {
   const v = versions || {};
   const attempt = (t) => ({ cv: line.cv, gv: line.gv, c: q.c, x: t.x, f: t.f, s: t.s, a: t.a || [],
     contentSha: v.content?.[line.cv] ?? null, generatorSha: v.generator?.[line.gv] ?? null });
-  const res = await askReplay(attempt(q));
-  const lines = [];
-  if (res.error) lines.push(`검증 불가 (${res.error})`);
-  else {
-    const same = res.qh === q.qh && JSON.stringify(res.oh) === JSON.stringify(q.oh);
-    lines.push(`문제: ${res.text}`, ...res.options.map((o, i) => `  ${i + 1}. ${o}`), `기록 답: ${JSON.stringify(q.a)} → 재채점 ${res.ok ? '정답' : '오답'} / 기록 ok=${q.ok} ${res.ok === q.ok ? '✓' : '✗ 불일치'}`, `해시 ${same ? '일치 ✓' : '불일치 ✗'}`);
-  }
+  const first = compareAttempt(await askReplay(attempt(q)), q, '');
+  const lines = [...first.lines];
+  let bad = first.bad;
   if (q.retry) {
-    const r2 = await askReplay(attempt(q.retry));
-    lines.push(r2.error ? `재도전 검증 불가 (${r2.error})` : `재도전: ${r2.text} → 재채점 ${r2.ok ? '정답' : '오답'} / 기록 ok=${q.retry.ok} ${r2.ok === q.retry.ok ? '✓' : '✗'}`);
+    const second = compareAttempt(await askReplay(attempt(q.retry)), q.retry, '재도전 ');
+    lines.push(...second.lines);
+    bad = bad || second.bad;
   }
   out.textContent = lines.join('\n');
+  // 라운드별 재채점 결과를 요약에 반영
+  const prev = regrades[line.id];
+  regrades[line.id] = { ok: !(bad || (prev && prev.ok === false)) };
+  if (lastInputs) {
+    summary = await summarize(lastInputs.players, lastInputs.recordsByPlayer, lastInputs.redemptionsByPlayer,
+      { appendChecks: lastInputs.appendChecks, checkpointStatus: lastInputs.cps, quarantine: store.getQuarantine(), regrades });
+    render();
+  }
 }
 
 // 개발용: 로컬 데이터의 첫 카드로 현재 버전 재현이 도는지 확인
@@ -150,17 +186,19 @@ function roundRow(p, line) {
 }
 
 function playerSection(p) {
-  const form = h('form', { class: 'redeem', onsubmit: (e) => { e.preventDefault(); redeem(p.id, e.target); } },
+  const submitBtn = h('button', { class: 'btn small full', type: 'submit' }, '환전 기록');
+  const form = h('form', { class: 'redeem', onsubmit: (e) => { e.preventDefault(); redeem(p.id, e.target, submitBtn); } },
     h('input', { name: 'creds', type: 'number', min: '1', placeholder: '크레드', required: true }),
     h('input', { name: 'label', placeholder: '라벨 (예: VP 475)', required: true }),
     h('input', { name: 'memo', class: 'full', placeholder: '메모' }),
-    h('button', { class: 'btn small full', type: 'submit' }, '환전 기록'));
+    submitBtn);
   const recent = p.lines.slice(-20).reverse();
   return h('section', { class: `card ${p.test ? 'test' : ''}` },
     h('h2', {}, `${p.nick} (${p.id})${p.test ? ' — 테스트' : ''}`),
     h('p', { class: 'sub' }, `누적 ${fmt(p.earned)} · 환전 ${fmt(p.redeemed)} · 잔액 ${fmt(p.balance)} · 라운드 ${p.rounds} · 사슬 `,
       h('span', { class: p.chain.ok ? 'ok' : 'bad' }, p.chain.ok ? '정상' : `깨짐(${p.chain.breakAt})`),
-      ' · 기준점 ', h('span', { class: checksStatus[p.id] === 'history-rewound' ? 'bad' : 'ok' }, checksStatus[p.id] || '없음')),
+      ' · 기준점 ', h('span', { class: checksStatus[p.id] === 'history-rewound' ? 'bad' : 'ok' }, checksStatus[p.id] || '없음'),
+      checkFailures[p.id] ? h('span', { class: 'bad' }, ` · 추가 전용 검사 실패(검증 불가): ${checkFailures[p.id]}`) : null),
     p.anomalies.length ? h('p', { class: 'anom' }, `이상 징후: ${[...new Set(p.anomalies.map((a) => a.code))].join(', ')}`) : h('p', { class: 'ok' }, '이상 징후 없음'),
     h('div', { class: 'row' }, h('button', { class: 'btn small', onclick: () => markChecked(p.id) }, '확인함(기준점 저장)')),
     h('h2', {}, '최근 라운드'),

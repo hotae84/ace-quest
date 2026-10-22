@@ -42,15 +42,21 @@ export function renderBattle(app) {
   const kills = r.q.filter((x) => x.ok === true).length;
   const balance = app.hintBalance();
   let draft = null;
+  let body = null;
   const confirm = h('button', { class: 'btn primary', disabled: true }, '확정');
-  const setDraft = (d) => { draft = d; confirm.disabled = !draftReady(q, d); };
+  const redrawChoices = () => {
+    if (q.form === 'order' || q.form === 'match') return; // 자체적으로 다시 그린다
+    const nb = RENDER[q.form](q, { draft, setDraft, done: false, chosen: null });
+    body.replaceWith(nb); body = nb;
+  };
+  const setDraft = (d) => { draft = d; confirm.disabled = !draftReady(q, d); redrawChoices(); };
   confirm.onclick = () => { if (draftReady(q, draft)) (st.inRetry ? app.submitRetry : app.submit)(toAnswer(q, draft)); };
   const hintBox = h('div', { class: 'hint-box' });
   const hintBtn = h('button', { class: 'btn ghost small', disabled: slot.hint || balance < RULES.HINT_COST,
     onclick: () => { const res = app.hint(); if (res.ok) { hintBox.replaceChildren(h('p', { class: 'hint-text' }, `💡 ${card.hint}`)); hintBtn.disabled = true; } else app.toast?.(res.reason === 'insufficient' ? '힌트 포인트가 모자라요' : '지금은 쓸 수 없어요'); } },
     `💡 힌트 ${RULES.HINT_COST} (남은 포인트 ${balance})`);
   if (slot.hint) hintBox.replaceChildren(h('p', { class: 'hint-text' }, `💡 ${card.hint}`));
-  const body = RENDER[q.form](q, { draft, setDraft, done: false, chosen: null });
+  body = RENDER[q.form](q, { draft, setDraft, done: false, chosen: null });
 
   return h('div', { class: 'page battle', style: `--ac:${agent.color}` },
     topbar(app, `${r.mode === 'bonus' ? '보너스 작전' : '출격'} · ${r.zone ? (st.index.zones.find((z) => z.id === r.zone)?.title || '') : '전체'}`,

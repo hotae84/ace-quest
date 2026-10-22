@@ -42,7 +42,10 @@ export function acceptReply(event, iframeWindow, pendingIds) {
   const d = event.data;
   if (!d || typeof d !== 'object' || typeof d.id !== 'string' || !pendingIds.has(d.id)) return false;
   if (typeof d.error === 'string') return true;
-  return typeof d.qh === 'string' && Array.isArray(d.oh) && typeof d.ok === 'boolean';
+  const optArr = (v) => v === undefined || v === null || Array.isArray(v);
+  const optStr = (v) => v === undefined || v === null || typeof v === 'string';
+  return typeof d.qh === 'string' && Array.isArray(d.oh) && typeof d.ok === 'boolean'
+    && optStr(d.passage) && optArr(d.statements) && optArr(d.pairs) && optArr(d.options);
 }
 
 const firstLines = (text, n) => text.split('\n').filter((s) => s.trim()).slice(0, n);
@@ -60,18 +63,21 @@ export async function checkpointStatus(currentText, saved) {
   return h === saved.prefixHash ? 'ok' : 'history-rewound';
 }
 
-export function redemptionLine({ creds, label, memo = '', ts = new Date().toISOString() }) {
+export function redemptionLine({ creds, label, memo = '', ts = new Date().toISOString(), id = globalThis.crypto.randomUUID() }) {
   const n = Number(creds);
   if (!Number.isInteger(n) || n <= 0) throw new Error('크레드는 1 이상의 정수');
   if (!label || !String(label).trim()) throw new Error('라벨이 필요합니다');
-  return { ts, creds: n, label: String(label).trim(), memo: String(memo || '') };
+  return { id, ts, creds: n, label: String(label).trim(), memo: String(memo || '') };
 }
 
-// 환전 기록 추가: 해시 사슬 없이 GET→PUT
+// 환전 기록 추가: 해시 사슬 없이 GET→PUT. 같은 작업 id가 이미 있으면 다시 쓰지 않는다(응답 유실 뒤 재시도 안전)
 export async function appendRedemption(repo, playerId, line) {
   const path = `redemptions/${playerId}.jsonl`;
   const r = await repo.readRaw(path);
-  const prefix = r.missing ? '' : (r.text === '' || r.text.endsWith('\n') ? r.text : `${r.text}\n`);
+  const text = r.missing ? '' : r.text;
+  const exists = text.split('\n').filter((s) => s.trim()).some((s) => { try { return JSON.parse(s).id === line.id; } catch { return false; } });
+  if (exists) return { ...line, skipped: true };
+  const prefix = text === '' || text.endsWith('\n') ? text : `${text}\n`;
   await repo.writeFile(path, `${prefix}${JSON.stringify(line)}\n`, { sha: r.missing ? undefined : r.sha, message: `redeem ${playerId}` });
-  return line;
+  return { ...line, skipped: false };
 }

@@ -1,7 +1,7 @@
 import { test, eq, ok } from './harness.js';
 import { chain, toLine } from '../js/records.js';
 import { newRound, answer, finishRound } from '../js/game.js';
-import { summarize, acceptReply, checkpointFor, checkpointStatus, isLedgerPath, redemptionLine } from '../js/admin-core.js';
+import { summarize, acceptReply, checkpointFor, checkpointStatus, isLedgerPath, redemptionLine, appendRedemption } from '../js/admin-core.js';
 
 const OX = { form: 'ox', text: 't', options: [{ text: 'O' }, { text: 'X' }], answer: 0 };
 const plan = (n) => ({ mode: 'normal', zone: 'Z1', cv: 'test.1', gv: '1', q: Array.from({ length: n }, (_, i) => ({ c: `c010${i + 1}`, x: [], f: 'ox', s: i })) });
@@ -72,7 +72,26 @@ test('isLedgerPath: 기록 파일만', () => {
 });
 
 test('redemptionLine', () => {
-  eq(redemptionLine({ creds: 1000, label: 'VP 475', memo: '', ts: 'T' }), { ts: 'T', creds: 1000, label: 'VP 475', memo: '' });
+  eq(redemptionLine({ creds: 1000, label: 'VP 475', memo: '', ts: 'T', id: 'op-1' }), { id: 'op-1', ts: 'T', creds: 1000, label: 'VP 475', memo: '' });
+  ok(typeof redemptionLine({ creds: 1, label: 'x' }).id === 'string', 'id 자동 생성');
   let threw = false; try { redemptionLine({ creds: 0, label: '', ts: 'T' }); } catch { threw = true; }
   ok(threw, '크레드 0·라벨 없음은 거부');
+});
+
+test('#9 appendRedemption은 같은 id를 두 번 추가하지 않는다', async () => {
+  const files = {};
+  const repo = {
+    readRaw: async (path) => (path in files ? { sha: 's', text: files[path] } : { missing: true }),
+    writeFile: async (path, text) => { files[path] = text; return { sha: 's2' }; },
+  };
+  const line = redemptionLine({ creds: 1000, label: 'VP 475', ts: 'T', id: 'op-1' });
+  eq(await appendRedemption(repo, 'p1', line), { ...line, skipped: false });
+  eq(await appendRedemption(repo, 'p1', line), { ...line, skipped: true });
+  eq(files['redemptions/p1.jsonl'].trim().split('\n').length, 1);
+});
+
+test('acceptReply는 선택 필드(passage·statements·pairs)를 허용한다', () => {
+  const win = {};
+  ok(acceptReply({ source: win, data: { id: 'r1', qh: 'a'.repeat(16), oh: ['x'], ok: true, text: 't', options: [], passage: 'p', statements: ['s'], pairs: [['l', 'r']] } }, win, new Set(['r1'])));
+  ok(!acceptReply({ source: win, data: { id: 'r1', qh: 'a'.repeat(16), oh: ['x'], ok: true, text: 't', options: [], statements: 'bad' } }, win, new Set(['r1'])));
 });

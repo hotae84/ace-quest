@@ -3,6 +3,7 @@ import { makeRng, randomSeed, cryptoRng } from './rng.js';
 import { drawRound, drawRetry } from './draw.js';
 import { generate, questionHash, optionHashes, GENERATOR_VERSION } from './questions/index.js';
 import * as G from './game.js';
+import { bonusOpen } from './game.js';
 import { toLine, merge, deriveState, parseJsonl } from './records.js';
 import { ScoresRepo, syncQueue } from './github.js';
 import { Store } from './store.js';
@@ -27,8 +28,11 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     state.cache = store.getCache();
     state.queue = store.getQueue();
     state.quarantine = store.getQuarantine();
-    const lines = merge(state.cache.lines, state.queue).lines;
-    state.derived = deriveState(lines, state.cache.redemptions);
+    const me = state.settings.playerId;
+    const bad = new Set(state.quarantine.map((q) => q.id));
+    const cacheLines = state.cache.player === me ? state.cache.lines : [];
+    const lines = merge(cacheLines, state.queue).lines.filter((l) => l.player === me && !bad.has(l.id));
+    state.derived = deriveState(lines, state.cache.player === me ? state.cache.redemptions : []);
     if (state.players) state.exchange = state.players.find((p) => p.id === state.settings.playerId)?.exchange || null;
   }
 
@@ -78,14 +82,14 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     const stored = store.getRound();
     const v = version();
     if (stored) {
+      const mine = stored.player === state.settings.playerId;
       if (stored.finished !== null) settle(stored, 'map');
-      else if (stored.cv === v.cv && stored.gv === v.gv) {
+      else if (mine && stored.cv === v.cv && stored.gv === v.gv) {
         state.round = stored;
         const slot = stored.q[stored.idx];
-        const retryPending = Boolean(slot.retry) && slot.retry.ok === null;
-        await prepare(retryPending);
-        if (slot.a === null || retryPending) state.view = 'battle';
-        else state.view = 'verdict';
+        const showRetry = Boolean(slot.retry);
+        await prepare(showRetry);
+        state.view = (showRetry ? slot.retry : slot).a === null ? 'battle' : 'verdict';
       } else settle(G.abandonRound(stored, { endedAt: now() }), 'map');
     }
     if (!state.settings.playerId || !state.settings.agent) state.view = 'setup';
@@ -95,7 +99,14 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     return state.view;
   }
 
+  // 보너스 작전 자격(§5.6)은 시작 시점의 최신 숙련도·완주 수로 판정한다
+  function bonusAvailable(zone) {
+    if (!zone || !state.derived) return false;
+    return bonusOpen(index.byZone.get(zone) || [], state.derived.mastery, state.derived.bonusDone.get(zone) || 0).open;
+  }
+
   async function startRound(zone, mode = 'normal') {
+    if (mode === 'bonus' && !bonusAvailable(zone)) return false;
     if (state.round && state.round.finished === null) settle(G.abandonRound(state.round, { endedAt: now() }), 'map');
     if (state.round) return false; // 저장 실패로 남은 확정 라운드가 있으면 새로 시작하지 않는다
     const { cv, gv } = version();
@@ -213,7 +224,17 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
 
   function go(view) { state.view = view; changed(); }
 
-  return { state, boot, startRound, submit, offerRetry, startRetry, submitRetry, next, hint, hintBalance, finish, abandon, saveSettings, loadPlayers, sync, go, version,
+  // 진행 중 라운드로 복귀 — 현재 시도(원 시도·재도전)의 응답 여부에 맞는 화면
+  function resume() {
+    const r = state.round;
+    if (!r || r.finished !== null) { state.view = 'map'; changed(); return; }
+    const slot = r.q[r.idx];
+    const att = state.inRetry && slot.retry ? slot.retry : slot;
+    state.view = att.a === null ? 'battle' : 'verdict';
+    changed();
+  }
+
+  return { state, boot, startRound, bonusAvailable, resume, submit, offerRetry, startRetry, submitRetry, next, hint, hintBalance, finish, abandon, saveSettings, loadPlayers, sync, go, version,
     get repo() { return scores; } };
 }
 

@@ -25,5 +25,6 @@ export function renderResult(app) {
     h('footer', { class: 'play-foot' },
       st.saveError ? h('button', { class: 'btn primary grow', onclick: () => app.finish() }, '다시 저장') : null,
       h('button', { class: 'btn grow', onclick: () => app.go('map') }, '지도로'),
-      !st.saveError ? h('button', { class: 'btn primary grow', onclick: () => app.startRound(r.zone, r.mode) }, '한 판 더') : null));
+      !st.saveError ? h('button', { class: 'btn primary grow', onclick: () => app.startRound(r.zone, r.mode === 'bonus' && app.bonusAvailable(r.zone) ? 'bonus' : 'normal') },
+        r.mode === 'bonus' && !app.bonusAvailable(r.zone) ? '한 판 더 (일반)' : '한 판 더') : null));
 }

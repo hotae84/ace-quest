@@ -35,7 +35,8 @@ export async function replay(m) {
   if (!card || helpers.some((h) => !h)) throw new Error('unavailable');
   const q = gen.generate({ card, helpers, form: m.f, seed: m.s });
   const [qh, oh] = await Promise.all([gen.questionHash(q), gen.optionHashes(q)]);
-  return { id: m.id, qh, oh, ok: gen.grade(q, m.a), text: q.text, options: gen.displayedTexts(q), answer: gen.canonicalAnswer(q) };
+  return { id: m.id, qh, oh, ok: gen.grade(q, m.a), text: q.text, options: gen.displayedTexts(q), answer: gen.canonicalAnswer(q),
+    passage: q.passage ?? null, statements: q.statements ?? null, pairs: q.pairs ? q.pairs.map((p) => p[0]) : null };
 }
 
 if (typeof window !== 'undefined') {

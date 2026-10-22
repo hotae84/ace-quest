@@ -92,12 +92,12 @@ export class ScoresRepo {
       const remoteIds = new Set(remote.map((l) => l.id));
       const skipped = pending.filter((p) => !bad.has(p.id) && remoteIds.has(p.id)).map((p) => p.id);
       const toSend = pending.filter((p) => !bad.has(p.id) && !remoteIds.has(p.id));
-      if (!toSend.length) return { sent: [], skipped, quarantine: m.quarantine, remoteLines: remote, sentLines: [] };
+      if (!toSend.length) return { sent: [], skipped, quarantine: m.quarantine, remoteLines: remote, sentLines: [], ledgerExists: !r.missing };
       const lastHash = remote.length ? remote[remote.length - 1].hash : 'GENESIS';
       const lines = await chain(toSend, lastHash);
       try {
         await this.writeFile(path, prefix + toJsonl(lines), { sha, message: `round ${String(lines[0].id).slice(0, 8)}` });
-        return { sent: lines.map((l) => l.id), skipped, quarantine: m.quarantine, remoteLines: remote, sentLines: lines };
+        return { sent: lines.map((l) => l.id), skipped, quarantine: m.quarantine, remoteLines: remote, sentLines: lines, ledgerExists: true };
       } catch (e) {
         if (!(e instanceof ConflictError)) throw e;
         lastErr = e;
@@ -147,27 +147,34 @@ export class ScoresRepo {
 
 const failed = (r) => r && r.ok === false;
 
-// 큐 → 저장소 전송(설계 §6.3). 격리 보존 → 캐시 갱신 성공 뒤에만 큐 정리
+// 큐 → 저장소 전송(설계 §6.3). 플레이어별로만 보내고, 격리 보존 성공 → 캐시 갱신 성공 뒤에만 큐 정리
 export async function syncQueue({ repo, player, store, quarantineIds = new Set(), now = () => new Date().toISOString() }) {
   const settings = store.getSettings();
   const cache = store.getCache();
-  const hasHistory = (cache.lines || []).length > 0 || Boolean(settings.everSynced);
-  const queue = store.getQueue();
-  const pending = queue.filter((b) => !quarantineIds.has(b.id));
+  const cacheLines = cache.player === player ? cache.lines || [] : [];
+  const synced = new Set(settings.syncedPlayers || []);
+  const hasHistory = cacheLines.length > 0 || synced.has(player);
+  const pending = store.getQueue().filter((b) => b.player === player && !quarantineIds.has(b.id));
   let res;
   try {
     res = await repo.appendLines({ path: `records/${player}.jsonl`, pending, bootstrap: !hasHistory });
   } catch (e) {
     return { sent: [], skipped: [], quarantine: [], error: e, remoteLines: null };
   }
-  if (res.quarantine.length) store.addQuarantine(res.quarantine);
-  const bad = new Set(res.quarantine.map((q) => q.id));
+  // 원격 ↔ 캐시 충돌도 같은 규칙으로 격리한다
+  const cacheConflicts = merge(res.remoteLines, cacheLines).quarantine;
+  const quarantine = [...res.quarantine, ...cacheConflicts];
+  if (quarantine.length && failed(store.addQuarantine(quarantine))) {
+    return { ...res, quarantine, error: new RepoError('격리 기록을 저장하지 못해 큐를 유지합니다', { code: 'quarantine-save' }) };
+  }
+  const bad = new Set(quarantine.map((q) => q.id));
   const lines = merge(res.remoteLines, res.sentLines).lines;
-  const okCache = store.setCache({ ...cache, lines, fetchedAt: now() });
-  const okSettings = store.setSettings({ everSynced: true });
+  const okCache = store.setCache({ player, lines, redemptions: cache.player === player ? cache.redemptions || [] : [], fetchedAt: now() });
+  const okSettings = res.ledgerExists && !synced.has(player) ? store.setSettings({ syncedPlayers: [...synced, player] }) : { ok: true };
   if (!failed(okCache) && !failed(okSettings)) {
     const done = new Set([...res.sent, ...res.skipped]);
-    store.setQueue(queue.filter((b) => !done.has(b.id) && !bad.has(b.id)));
+    // 전송 중 결산된 라운드가 있을 수 있으므로 최신 큐에서 이번에 처리한 것만 뺀다
+    store.setQueue(store.getQueue().filter((b) => !done.has(b.id) && !bad.has(b.id)));
   }
-  return { ...res, error: null };
+  return { ...res, quarantine, error: null };
 }

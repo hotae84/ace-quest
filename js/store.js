@@ -1,7 +1,7 @@
 export const KEYS = { settings: 'aq.settings', queue: 'aq.queue', cache: 'aq.cache', round: 'aq.round', quarantine: 'aq.quarantine', adminChecks: 'aq.admin.checks' };
 
-const DEFAULT_SETTINGS = () => ({ token: null, owner: 'hotae84', repo: 'ace-quest-scores', playerId: null, nick: null, agent: null, remember: false, everSynced: false });
-const DEFAULT_CACHE = () => ({ lines: [], redemptions: [], fetchedAt: null });
+const DEFAULT_SETTINGS = () => ({ token: null, owner: 'hotae84', repo: 'ace-quest-scores', playerId: null, nick: null, agent: null, remember: false, syncedPlayers: [] });
+const DEFAULT_CACHE = () => ({ player: null, lines: [], redemptions: [], fetchedAt: null });
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 // localStorage 래퍼. 읽기는 깨지면 기본값 + broken 기록, 쓰기는 실패 시 {ok:false}
