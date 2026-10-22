@@ -154,7 +154,11 @@ export async function syncQueue({ repo, player, store, quarantineIds = new Set()
   const cacheLines = cache.player === player ? cache.lines || [] : [];
   const synced = new Set(settings.syncedPlayers || []);
   const hasHistory = cacheLines.length > 0 || synced.has(player);
-  const pending = store.getQueue().filter((b) => b.player === player && !quarantineIds.has(b.id));
+  const queued = store.getQueue().filter((b) => b.player === player && !quarantineIds.has(b.id));
+  // 캐시 ↔ 큐 충돌(원격에 아직 없는 id)은 보내기 전에 격리한다
+  const localConflicts = merge(cacheLines, queued).quarantine;
+  const localBad = new Set(localConflicts.map((q) => q.id));
+  const pending = queued.filter((b) => !localBad.has(b.id));
   let res;
   try {
     res = await repo.appendLines({ path: `records/${player}.jsonl`, pending, bootstrap: !hasHistory });
@@ -163,7 +167,8 @@ export async function syncQueue({ repo, player, store, quarantineIds = new Set()
   }
   // 원격 ↔ 캐시 충돌도 같은 규칙으로 격리한다
   const cacheConflicts = merge(res.remoteLines, cacheLines).quarantine;
-  const quarantine = [...res.quarantine, ...cacheConflicts];
+  const seen = new Set();
+  const quarantine = [...localConflicts, ...res.quarantine, ...cacheConflicts].filter((q) => !seen.has(q.id) && seen.add(q.id));
   if (quarantine.length && failed(store.addQuarantine(quarantine))) {
     return { ...res, quarantine, error: new RepoError('격리 기록을 저장하지 못해 큐를 유지합니다', { code: 'quarantine-save' }) };
   }

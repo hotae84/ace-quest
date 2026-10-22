@@ -24,6 +24,8 @@ let busy = false;
 let lastError = '';
 let lastInputs = null;
 const regrades = {};
+const replayOut = {}; // `${roundId}:${i}` → 재현 결과 텍스트(재렌더링 뒤 복원)
+const openRounds = new Set();
 const pendingRedeem = {};
 let checkFailures = {};
 
@@ -113,7 +115,8 @@ async function redeem(playerId, form, button) {
 // 원 시도·재도전에 같은 검증: 해시 대조 + 미응답은 채점 비교 제외
 function compareAttempt(res, t, label) {
   if (res.error) return { lines: [`${label}검증 불가 (${res.error})`], bad: res.error !== 'timeout' && res.error !== 'unavailable' };
-  const same = res.qh === t.qh && JSON.stringify(res.oh) === JSON.stringify(t.oh);
+  const shown = t.qh !== null && t.qh !== undefined;
+  const same = !shown || (res.qh === t.qh && JSON.stringify(res.oh) === JSON.stringify(t.oh));
   const lines = [`${label}문제: ${res.text}`];
   if (res.passage) lines.push(`  📜 ${res.passage}`);
   if (res.statements) lines.push(...res.statements.map((s, i) => `  ${['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'][i]}. ${s}`));
@@ -122,11 +125,11 @@ function compareAttempt(res, t, label) {
   let bad = !same;
   if (t.a === null) lines.push(`  미응답 — 채점 비교 없음`);
   else { const okMatch = res.ok === t.ok; bad = bad || !okMatch; lines.push(`  기록 답 ${JSON.stringify(t.a)} → 재채점 ${res.ok ? '정답' : '오답'} / 기록 ok=${t.ok} ${okMatch ? '✓' : '✗ 불일치'}`); }
-  lines.push(`  해시 ${same ? '일치 ✓' : '불일치 ✗'}`);
+  lines.push(shown ? `  해시 ${same ? '일치 ✓' : '불일치 ✗'}` : '  표시 전 문항 — 해시 비교 없음');
   return { lines, bad };
 }
 
-async function replayRound(line, q, out) {
+async function replayRound(line, q, out, key) {
   out.textContent = '재현 중…';
   const v = versions || {};
   const attempt = (t) => ({ cv: line.cv, gv: line.gv, c: q.c, x: t.x, f: t.f, s: t.s, a: t.a || [],
@@ -140,6 +143,7 @@ async function replayRound(line, q, out) {
     bad = bad || second.bad;
   }
   out.textContent = lines.join('\n');
+  replayOut[key] = out.textContent;
   // 라운드별 재채점 결과를 요약에 반영
   const prev = regrades[line.id];
   regrades[line.id] = { ok: !(bad || (prev && prev.ok === false)) };
@@ -172,15 +176,16 @@ function roundRow(p, line) {
   const kills = line.q.filter((x) => x.ok === true).length;
   const sec = Math.round((Date.parse(line.endedAt) - Date.parse(line.startedAt)) / 1000);
   const anoms = p.anomalies.filter((a) => a.roundId === line.id).map((a) => a.code);
-  return h('details', {},
+  return h('details', { open: openRounds.has(line.id) ? true : null, ontoggle: (e) => { if (e.target.open) openRounds.add(line.id); else openRounds.delete(line.id); } },
     h('summary', {}, `${String(line.startedAt).slice(0, 16).replace('T', ' ')} · ${line.zone || '전체'} · ${line.mode === 'bonus' ? '보너스' : '일반'} · 킬 ${kills}/${line.q.length} · ${fmt(line.creds)} 크레드 · ${Number.isFinite(sec) ? `${sec}초` : ''}${line.finished ? '' : ' · 이탈'}`,
       anoms.length ? h('span', { class: 'anom' }, ` ⚠ ${anoms.join(', ')}`) : null),
     line.q.map((q, i) => {
-      const out = h('div', { class: 'replay-out' });
+      const key = `${line.id}:${i}`;
+      const out = h('div', { class: 'replay-out' }, replayOut[key] || '');
       return h('div', { class: 'q-row' },
         h('div', {}, `${i + 1}. ${q.c} · ${q.f} · ${q.ok === null ? '미응답' : q.ok ? '정답' : '오답'}${q.hint ? ' · 힌트' : ''}${q.boost ? ' · 부스트' : ''}`,
           q.retry ? ` → 재도전 ${q.retry.f} · ${q.retry.ok === null ? '미응답' : q.retry.ok ? '정답' : '오답'}${q.retry.hint ? ' · 힌트' : ''}` : ''),
-        h('button', { class: 'btn small', onclick: () => replayRound(line, q, out) }, '재현'),
+        h('button', { class: 'btn small', onclick: () => replayRound(line, q, out, key) }, '재현'),
         out);
     }));
 }

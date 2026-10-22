@@ -146,15 +146,23 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     changed();
   }
 
+  let transitioning = false;
+
+  // 현재 시도(원 시도 또는 재도전)가 답을 낸 뒤에만, 한 번에 하나씩 넘어간다
   async function next() {
     const r = state.round;
-    if (!r) return;
-    if (r.idx < r.q.length - 1) {
-      state.round = { ...r, idx: r.idx + 1 };
-      await prepare(false);
-      state.view = 'battle';
-      changed();
-    } else await finish();
+    if (!r || transitioning) return;
+    const slot = r.q[r.idx];
+    const att = state.inRetry && slot.retry ? slot.retry : slot;
+    if (att.a === null) return;
+    transitioning = true;
+    try {
+      if (r.idx < r.q.length - 1) {
+        state.round = { ...r, idx: r.idx + 1 };
+        await prepare(false);
+        if (state.round && state.round.id === r.id) { state.view = 'battle'; changed(); }
+      } else await finish();
+    } finally { transitioning = false; }
   }
 
   function hint() {
@@ -180,8 +188,15 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
   }
 
   function saveSettings(partial) {
+    // 플레이어가 바뀌면 진행 중 라운드는 이전 플레이어 이름으로 이탈 확정한 뒤 전환한다
+    if (partial.playerId && partial.playerId !== state.settings.playerId && state.round) {
+      if (state.round.finished === null) state.round = G.abandonRound(state.round, { endedAt: now() });
+      if (!settle(state.round, 'map')) return false;
+    }
     const r = store.setSettings(partial);
     state.settings = store.getSettings();
+    state.players = partial.playerId && partial.playerId !== state.settings.playerId ? null : state.players;
+    recompute();
     if (state.settings.token) scores = new ScoresRepo({ owner: state.settings.owner, repo: state.settings.repo, token: state.settings.token });
     else scores = null;
     changed();
@@ -198,15 +213,17 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
 
   async function sync() {
     if (!scores || !state.settings.playerId || state.syncing) return null;
+    const player = state.settings.playerId; // 시작 당시 플레이어·저장소에 고정
+    const repoNow = scores;
     state.syncing = true; changed();
     try {
-      const r = await syncQueue({ repo: scores, player: state.settings.playerId, store, quarantineIds: new Set(store.getQuarantine().map((q) => q.id)) });
+      const r = await syncQueue({ repo: repoNow, player, store, quarantineIds: new Set(store.getQuarantine().map((q) => q.id)) });
       state.syncError = r.error;
       if (!r.error) {
         try {
-          const red = await scores.readRaw(`redemptions/${state.settings.playerId}.jsonl`);
+          const red = await repoNow.readRaw(`redemptions/${player}.jsonl`);
           const cache = store.getCache();
-          store.setCache({ ...cache, redemptions: red.missing ? [] : parseJsonl(red.text) });
+          if (cache.player === player) store.setCache({ ...cache, redemptions: red.missing ? [] : parseJsonl(red.text) });
         } catch { /* 환전 기록 읽기 실패는 다음 기회에 */ }
         if (!state.players) { try { await loadPlayers(); } catch { /* 설정 화면에서 다시 */ } }
         state.lastSync = now();

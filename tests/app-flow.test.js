@@ -204,3 +204,35 @@ test('#12 resume은 진행 중 시도에 맞는 화면으로 돌아간다', asyn
   app.resume();
   eq(app.state.view, 'verdict');
 });
+
+test('v2#1 실행 중 플레이어를 바꾸면 기존 라운드는 이전 플레이어로 이탈 확정되고 상태가 재계산된다', async () => {
+  const { app, store } = make();
+  await app.boot();
+  await app.startRound('Z1', 'normal');
+  await playAll(app);
+  await app.startRound('Z1', 'normal');
+  await app.submit(correct(app));
+  for (const c of cards) app.state.derived.mastery.set(c.id, 5);
+  ok(app.bonusAvailable('Z1'));
+  app.saveSettings({ playerId: 'p2', nick: '둘째' });
+  eq(app.state.round, null);
+  const q = store.getQueue();
+  eq(q.length, 2);
+  ok(q.every((b) => b.player === 'p1'));
+  eq(q[1].finished, false);
+  eq(app.state.derived.rounds, 0);
+  ok(!app.bonusAvailable('Z1'), 'p2는 p1 숙련도를 쓰지 못한다');
+  eq(await app.startRound('Z1', 'bonus'), false);
+});
+
+test('v2#3 next()가 겹쳐 들어와도 문제는 하나만 넘어간다', async () => {
+  const { app } = make();
+  await app.boot();
+  await app.startRound('Z1', 'normal');
+  await app.submit(correct(app));
+  await Promise.all([app.next(), app.next(), app.next()]);
+  eq(app.state.round.idx, 1);
+  ok(app.state.round.q[1].qh, '두 번째 문제가 준비됨');
+  await app.next();
+  eq(app.state.round.idx, 1, '답하지 않은 문제에서는 넘어가지 않는다');
+});

@@ -276,3 +276,14 @@ test('다른 플레이어의 캐시는 쓰지 않는다(hasHistory 판단·병�
   eq(r.sent, ['a'], 'p2 캐시가 있어도 p1은 bootstrap으로 전송');
   eq(store.s.cache.player, 'p1');
 });
+
+test('v2#5 원격에 없는 id의 캐시↔큐 충돌도 격리되고 전송되지 않는다', async () => {
+  const [lz] = await chain([line('z')]);
+  const gh = fakeGitHub({ files: { 'records/p1.jsonl': toJsonl([lz]) } });
+  const store = fakeStore({ queue: [line('a', 70), line('b')], cache: { player: 'p1', lines: [lz, { ...line('a', 60), prev: lz.hash, hash: 'x' }], redemptions: [], fetchedAt: null }, settings: { syncedPlayers: ['p1'] } });
+  const r = await syncQueue({ repo: repoOf(gh), player: 'p1', store, quarantineIds: new Set() });
+  eq(r.error, null);
+  eq(r.sent, ['b']);
+  eq(store.s.quarantine.map((q) => q.id), ['a']);
+  eq(store.s.queue, []);
+});
