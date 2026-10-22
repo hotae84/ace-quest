@@ -21,6 +21,7 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
   if (!scores && state.settings.token) scores = new ScoresRepo({ owner: state.settings.owner, repo: state.settings.repo, token: state.settings.token });
 
   const version = () => ({ cv: index.contentVersion, gv: GENERATOR_VERSION });
+  let transitioning = false; // 출격·재도전·다음 전환의 공통 잠금
   const card = (id) => index.cards.get(id);
   const changed = () => onChange(state);
 
@@ -42,6 +43,7 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     return r.ok;
   }
 
+  // 비동기 해시 계산 뒤에는 준비를 시작한 라운드·문항·시도가 그대로일 때만 상태를 바꾼다
   async function prepare(retry = false) {
     const r = state.round;
     const i = r.idx;
@@ -50,11 +52,15 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     const q = generate({ card: card(main.c), helpers: slot.x.map(card), form: slot.f, seed: slot.s });
     if (!slot.qh) {
       const [qh, oh] = await Promise.all([questionHash(q), optionHashes(q)]);
+      const cur = state.round;
+      const still = cur && cur.id === r.id && cur.idx === i && (retry ? cur.q[i].retry && cur.q[i].retry.s === slot.s : cur.q[i].s === slot.s);
+      if (!still) return false;
       state.round = G.attachQuestion(state.round, i, { qh, oh }, { retry });
     }
     if (retry) state.retryQuestion = q; else { state.question = q; state.retryQuestion = null; }
     state.inRetry = retry;
     persistRound();
+    return true;
   }
 
   // 설계 §6.3: ① 확정 라운드 저장 → ② 큐 저장 → ③ 성공 뒤에만 라운드 삭제
@@ -106,18 +112,22 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
   }
 
   async function startRound(zone, mode = 'normal') {
+    if (transitioning) return false;
     if (mode === 'bonus' && !bonusAvailable(zone)) return false;
-    if (state.round && state.round.finished === null) settle(G.abandonRound(state.round, { endedAt: now() }), 'map');
-    if (state.round) return false; // 저장 실패로 남은 확정 라운드가 있으면 새로 시작하지 않는다
-    const { cv, gv } = version();
-    const plan = drawRound({ index, zone, mode, mastery: state.derived.mastery, recent: state.derived.recent, rng: makeRng(seed()), cv, gv });
-    if (!plan.q.length) return false;
-    state.round = G.newRound(plan, { id: uuid(), player: state.settings.playerId, agent: state.settings.agent, startedAt: now() });
-    state.result = null;
-    await prepare(false);
-    state.view = 'battle';
-    changed();
-    return true;
+    transitioning = true;
+    try {
+      if (state.round && state.round.finished === null) settle(G.abandonRound(state.round, { endedAt: now() }), 'map');
+      if (state.round) return false; // 저장 실패로 남은 확정 라운드가 있으면 새로 시작하지 않는다
+      const { cv, gv } = version();
+      const plan = drawRound({ index, zone, mode, mastery: state.derived.mastery, recent: state.derived.recent, rng: makeRng(seed()), cv, gv });
+      if (!plan.q.length) return false;
+      state.round = G.newRound(plan, { id: uuid(), player: state.settings.playerId, agent: state.settings.agent, startedAt: now() });
+      state.result = null;
+      await prepare(false);
+      state.view = 'battle';
+      changed();
+      return true;
+    } finally { transitioning = false; }
   }
 
   async function submit(a) {
@@ -130,13 +140,17 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
   const offerRetry = () => Boolean(state.round) && G.canRetry(state.round, state.round.idx);
 
   async function startRetry() {
-    const i = state.round.idx;
-    const slot = state.round.q[i];
-    const r = drawRetry({ card: card(slot.c), index, prev: state.question, prevPlan: slot, rng: makeRng(seed()) });
-    state.round = G.startRetry(state.round, i, { f: r.f, s: r.s, x: r.x });
-    await prepare(true);
-    state.view = 'battle';
-    changed();
+    if (transitioning || !state.round || !G.canRetry(state.round, state.round.idx)) return;
+    transitioning = true;
+    try {
+      const i = state.round.idx;
+      const slot = state.round.q[i];
+      const r = drawRetry({ card: card(slot.c), index, prev: state.question, prevPlan: slot, rng: makeRng(seed()) });
+      state.round = G.startRetry(state.round, i, { f: r.f, s: r.s, x: r.x });
+      await prepare(true);
+      state.view = 'battle';
+      changed();
+    } finally { transitioning = false; }
   }
 
   async function submitRetry(a) {
@@ -145,8 +159,6 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     state.view = 'verdict';
     changed();
   }
-
-  let transitioning = false;
 
   // 현재 시도(원 시도 또는 재도전)가 답을 낸 뒤에만, 한 번에 하나씩 넘어간다
   async function next() {

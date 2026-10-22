@@ -236,3 +236,17 @@ test('v2#3 next()가 겹쳐 들어와도 문제는 하나만 넘어간다', asyn
   await app.next();
   eq(app.state.round.idx, 1, '답하지 않은 문제에서는 넘어가지 않는다');
 });
+
+test('v3#1 출격이 겹쳐 들어와도 라운드는 하나이고 문항 해시는 기록된 생성 입력과 일치한다', async () => {
+  const { app, store } = make();
+  await app.boot();
+  const results = await Promise.all([app.startRound('Z1', 'normal'), app.startRound('Z1', 'normal'), app.startRound(null, 'normal')]);
+  eq(results.filter(Boolean).length, 1);
+  eq(store.getQueue().length, 0, '이탈 라운드가 생기지 않는다');
+  const r = app.state.round;
+  const slot = r.q[0];
+  const { generate, questionHash } = await import('../js/questions/index.js');
+  const q = generate({ card: index.cards.get(slot.c), helpers: slot.x.map((id) => index.cards.get(id)), form: slot.f, seed: slot.s });
+  eq(slot.qh, await questionHash(q));
+  eq(app.state.question.text, q.text);
+});
