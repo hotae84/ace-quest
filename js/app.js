@@ -223,8 +223,11 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     return state.players;
   }
 
+  let syncPending = false;
+  // 진행 중이면 한 번 더 돌도록 표시만 하고 돌아온다(결산 직후 요청이 묻히지 않게)
   async function sync() {
-    if (!scores || !state.settings.playerId || state.syncing) return null;
+    if (!scores || !state.settings.playerId) return null;
+    if (state.syncing) { syncPending = true; return null; }
     const player = state.settings.playerId; // 시작 당시 플레이어·저장소에 고정
     const repoNow = scores;
     state.syncing = true; changed();
@@ -248,6 +251,7 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     } finally {
       state.syncing = false;
       changed();
+      if (syncPending) { syncPending = false; sync().catch(() => {}); }
     }
   }
 
@@ -263,7 +267,9 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     changed();
   }
 
-  return { state, boot, startRound, bonusAvailable, resume, submit, offerRetry, startRetry, submitRetry, next, hint, hintBalance, finish, abandon, saveSettings, loadPlayers, sync, go, version,
+  function setRepo(r) { scores = r; }
+
+  return { state, boot, startRound, bonusAvailable, resume, setRepo, submit, offerRetry, startRetry, submitRetry, next, hint, hintBalance, finish, abandon, saveSettings, loadPlayers, sync, go, version,
     get repo() { return scores; } };
 }
 
@@ -283,6 +289,7 @@ export async function main() {
     const index = buildIndex({ zones, cards });
     const store = new Store(localStorage);
     app = createApp({ index, store, agents, onChange: render });
+    globalThis.aceQuest = app; // 디버깅·자동 확인용
     app.toast = toast;
     app.applyUpdate = () => applyUpdate(app, store);
     window.addEventListener('online', () => app.sync());

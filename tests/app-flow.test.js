@@ -250,3 +250,21 @@ test('v3#1 출격이 겹쳐 들어와도 라운드는 하나이고 문항 해시
   eq(slot.qh, await questionHash(q));
   eq(app.state.question.text, q.text);
 });
+
+test('동기화 중에 들어온 sync 요청은 끝난 뒤 한 번 더 실행된다', async () => {
+  const { app, store } = make();
+  let calls = 0; let release = null;
+  const repo = { appendLines: async () => { calls++; await new Promise((r) => { release = r; }); return { sent: [], skipped: [], quarantine: [], remoteLines: [], sentLines: [], ledgerExists: false }; },
+    readRaw: async () => ({ missing: true }), readPlayers: async () => [] };
+  app.setRepo(repo);
+  const first = app.sync();
+  await new Promise((r) => setTimeout(r, 0));
+  const second = app.sync();
+  eq(calls, 1);
+  release();
+  await first; await second;
+  await new Promise((r) => setTimeout(r, 0));
+  release();
+  await new Promise((r) => setTimeout(r, 0));
+  eq(calls, 2, '대기 중이던 요청이 이어서 실행된다');
+});

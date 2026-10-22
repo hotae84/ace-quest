@@ -287,3 +287,12 @@ test('v2#5 원격에 없는 id의 캐시↔큐 충돌도 격리되고 전송되�
   eq(store.s.quarantine.map((q) => q.id), ['a']);
   eq(store.s.queue, []);
 });
+
+test('readRaw: 메타 응답에 base64 내용이 있으면 raw 요청 없이 디코드한다', async () => {
+  const calls = [];
+  const fetch = async (url, init) => { calls.push(init.headers.Accept); return { ok: true, status: 200, json: async () => ({ sha: 's', encoding: 'base64', content: Buffer.from('한글 content\n', 'utf8').toString('base64') }), text: async () => 'should-not-be-used', headers: { get: () => null } }; };
+  const repo = new ScoresRepo({ owner: 'o', repo: 'r', token: TOKEN, fetch });
+  eq(await repo.readRaw('x.json'), { sha: 's', text: '한글 content\n' });
+  eq(calls.length, 1);
+  ok(calls.every((a) => a.includes('object')));
+});

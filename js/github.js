@@ -21,13 +21,20 @@ function toBase64Utf8(text) {
   return btoa(bin);
 }
 
+function fromBase64Utf8(b64) {
+  const bin = atob(String(b64).replace(/\s+/g, ''));
+  const bytes = Uint8Array.from(bin, (ch) => ch.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
 const defaultSleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export class ScoresRepo {
   constructor({ owner, repo, token, fetch = globalThis.fetch, sleep = defaultSleep }) {
     this.base = `${API}/repos/${owner}/${repo}`;
     this.token = token;
-    this.fetch = fetch;
+    // 브라우저의 fetch는 window 컨텍스트로 불러야 한다(this.fetch(...)는 Illegal invocation)
+    this.fetch = (...args) => fetch(...args);
     this.sleep = sleep;
   }
 
@@ -36,8 +43,9 @@ export class ScoresRepo {
     return { Authorization: `Bearer ${this.token}`, Accept: accept, 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' };
   }
 
+  // API 응답은 브라우저 캐시에 두지 않는다(같은 URL을 다른 Accept로 두 번 읽을 때 첫 응답이 재사용되는 문제)
   async get(url, accept) {
-    return this.fetch(url, { method: 'GET', headers: this.headers(accept) });
+    return this.fetch(url, { method: 'GET', headers: this.headers(accept), cache: 'no-store' });
   }
 
   contentsUrl(path, ref) {
@@ -49,7 +57,10 @@ export class ScoresRepo {
     const meta = await this.get(this.contentsUrl(path, ref), ACCEPT_OBJ);
     if (meta.status === 404) return { missing: true };
     if (!meta.ok) throw new RepoError(`읽기 실패 ${meta.status}`, { status: meta.status, code: 'read' });
-    const { sha } = await meta.json();
+    const obj = await meta.json();
+    const { sha } = obj;
+    // 1MB 미만이면 메타 응답에 base64 내용이 함께 온다 — 그대로 쓴다
+    if (obj.encoding === 'base64' && typeof obj.content === 'string' && obj.content.length) return { sha, text: fromBase64Utf8(obj.content) };
     const raw = await this.get(this.contentsUrl(path, ref), ACCEPT_RAW);
     if (!raw.ok) throw new RepoError(`읽기 실패 ${raw.status}`, { status: raw.status, code: 'read' });
     return { sha, text: await raw.text() };
@@ -58,7 +69,7 @@ export class ScoresRepo {
   async writeFile(path, text, { sha, message }) {
     const body = { message, content: toBase64Utf8(text), author: AUTHOR, committer: AUTHOR };
     if (sha) body.sha = sha;
-    const res = await this.fetch(this.contentsUrl(path), { method: 'PUT', headers: this.headers(ACCEPT_JSON), body: JSON.stringify(body) });
+    const res = await this.fetch(this.contentsUrl(path), { method: 'PUT', headers: this.headers(ACCEPT_JSON), body: JSON.stringify(body), cache: 'no-store' });
     if (res.status === 409 || res.status === 412 || res.status === 422) throw new ConflictError(`쓰기 충돌 ${res.status}`, { status: res.status });
     if (!res.ok) throw new RepoError(`쓰기 실패 ${res.status}`, { status: res.status, code: 'write' });
     const json = await res.json();

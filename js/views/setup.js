@@ -10,19 +10,19 @@ export function renderSetup(app, { first = false } = {}) {
   let nick = s.nick || '';
   let pin = '';
   let agent = s.agent || null;
-  const err = h('p', { class: 'error', role: 'alert' });
+  const err = h('p', { class: 'error', role: 'alert' }, st.setupError || '');
   const playersBox = h('div', { class: 'players' });
 
   const drawPlayers = () => {
     const list = st.players;
-    playersBox.replaceChildren(
+    playersBox.replaceChildren(...[
       h('h2', {}, '플레이어'),
       list ? h('div', { class: 'row wrap' }, list.map((p) => h('button', {
         class: `btn small ${playerId === p.id ? 'primary' : ''}`, onclick: () => { playerId = p.id; nick = p.nick; drawPlayers(); },
       }, p.nick))) : h('p', { class: 'sub' }, token ? '토큰으로 플레이어 목록을 불러오세요.' : '토큰이 없으면 아래에 직접 입력합니다(오프라인 시작).'),
       list ? h('label', { class: 'field' }, 'PIN', h('input', { type: 'password', inputmode: 'numeric', value: pin, oninput: (e) => { pin = e.target.value; } })) : null,
       !list ? h('label', { class: 'field' }, '플레이어 id', h('input', { value: playerId, oninput: (e) => { playerId = e.target.value.trim(); } })) : null,
-      !list ? h('label', { class: 'field' }, '닉네임', h('input', { value: nick, oninput: (e) => { nick = e.target.value.trim(); } })) : null);
+      !list ? h('label', { class: 'field' }, '닉네임', h('input', { value: nick, oninput: (e) => { nick = e.target.value.trim(); } })) : null].filter(Boolean));
   };
   drawPlayers();
 
@@ -34,11 +34,13 @@ export function renderSetup(app, { first = false } = {}) {
     },
   }, agentBadge(a, 'md'), h('span', {}, a.name))));
 
+  // saveSettings가 화면을 다시 그리므로, 결과는 상태(setupError)에 남겨 새 화면이 보여 준다
   async function loadPlayers() {
-    err.textContent = '';
-    if (!token) { err.textContent = '토큰을 먼저 입력하세요.'; return; }
+    st.setupError = '';
+    if (!token) { st.setupError = '토큰을 먼저 입력하세요.'; app.go('setup'); return; }
     app.saveSettings({ token });
-    try { await app.loadPlayers(); drawPlayers(); } catch (e) { err.textContent = `목록을 불러오지 못했어요: ${e.message}`; }
+    try { await app.loadPlayers(); } catch (e) { st.setupError = `목록을 불러오지 못했어요: ${e.message}`; app.toast?.(st.setupError); }
+    app.go(first ? 'setup' : 'settings');
   }
 
   function save() {
