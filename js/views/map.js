@@ -2,6 +2,8 @@ import { h } from '../dom.js';
 import { bonusOpen } from '../game.js';
 import { agentOf, agentBadge, fmt } from './common.js';
 import { targetsOf } from '../content.js';
+import { renderPortrait } from '../fx/portrait.js';
+import { totalMastery } from '../fx/rank.js';
 
 const LEVEL = (m) => (m >= 5 ? 'l3' : m >= 3 ? 'l2' : m >= 1 ? 'l1' : 'l0');
 
@@ -32,10 +34,12 @@ export function renderMap(app) {
     : null;
   const red = (st.cache.player === st.settings.playerId ? st.cache.redemptions || [] : []).slice(-5).reverse();
   const unfinished = st.round && st.round.finished === null;
+  const portraitSlot = h('div', { class: 'fx-slot' }, agentBadge(agent, 'md'));
+  renderPortrait(agent, totalMastery(d.mastery), { size: 'md' }).then((el) => portraitSlot.replaceChildren(el));
   return h('div', { class: 'page map' },
     h('header', { class: 'hud' },
-      agentBadge(agent, 'md'),
-      h('div', { class: 'hud-name' }, h('strong', {}, st.settings.nick || st.settings.playerId), h('span', { class: 'sub' }, ` · ${agent.name}`)),
+      portraitSlot,
+      h('div', { class: 'hud-name' }, h('strong', {}, st.settings.nick || st.settings.playerId)),
       h('div', { class: 'hud-stats' },
         h('span', { class: 'chip' }, `💰 ${fmt(d.balance)}`),
         h('span', { class: 'chip hint' }, `💡 ${d.hintPts}`),

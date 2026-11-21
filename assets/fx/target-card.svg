@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">
+  <g id="frame" fill="none" stroke="currentColor">
+    <path class="ink" stroke-width="4" d="M24 8H296L312 24V176L296 192H24L8 176V24Z"/>
+    <path class="ac" stroke-width="4" d="M8 50V24L24 8H50M270 8H296L312 24V50M312 150V176L296 192H270M50 192H24L8 176V150"/>
+  </g>
+  <g id="emblem-slot" class="muted" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M24 40V24H40M48 24H64M72 24H88M96 24H120V40M120 48V64M120 72V88M120 96V120H104M96 120H80M72 120H56M48 120H24V104M24 96V80M24 72V56"/>
+  </g>
+  <g id="hp" class="ok" fill="currentColor">
+    <rect id="hp-1" x="74" y="162" width="40" height="14"/>
+    <rect id="hp-2" x="120" y="162" width="40" height="14"/>
+    <rect id="hp-3" x="166" y="162" width="40" height="14"/>
+    <rect id="hp-4" x="212" y="162" width="40" height="14"/>
+    <rect id="hp-5" x="258" y="162" width="40" height="14"/>
+  </g>
+  <g id="stamp" class="danger" fill="none" stroke="currentColor" stroke-width="6" transform="rotate(-12 160 100)">
+    <rect x="61" y="69" width="198" height="62"/>
+  </g>
+</svg>

@@ -5,6 +5,9 @@ import { renderChoice } from '../questions/render/choice.js';
 import { renderOx } from '../questions/render/ox.js';
 import { renderOrder } from '../questions/render/order.js';
 import { renderMatch } from '../questions/render/match.js';
+import { renderTarget, hpOf, roundKills } from '../fx/target.js';
+import { renderPortrait } from '../fx/portrait.js';
+import { totalMastery } from '../fx/rank.js';
 
 const RENDER = { 'mcq-data': renderChoice, 'mcq-combo': renderChoice, 'mcq-sent': renderChoice, 'mcq-neg': renderChoice, 'mcq-fixed': renderChoice, blank: renderChoice, ox: renderOx, order: renderOrder, match: renderMatch };
 const NEG = /(옳지 않은|아닌|틀린)/;
@@ -57,12 +60,19 @@ export function renderBattle(app) {
     `💡 힌트 ${RULES.HINT_COST} (남은 포인트 ${balance})`);
   if (slot.hint) hintBox.replaceChildren(h('p', { class: 'hint-text' }, `💡 ${target.hint}`));
   body = RENDER[q.form](q, { draft, setDraft, done: false, chosen: null });
+  // 연출(표적 카드·포트레이트)은 별도 슬롯에 비동기로 그린다 — 기록·해시와 무관
+  const mastery = (st.derived?.mastery.get(target.id) || 0) + roundKills(r, target.id, r.idx);
+  const targetSlot = h('div', { class: 'fx-slot' });
+  renderTarget({ name: target.name, hp: hpOf(mastery), emblem: null, motion: false }).then((el) => targetSlot.replaceChildren(el));
+  const portraitSlot = h('div', { class: 'fx-slot' });
+  renderPortrait(agent, totalMastery(st.derived?.mastery || new Map())).then((el) => portraitSlot.replaceChildren(el));
 
   return h('div', { class: 'page battle', style: `--ac:${agent.color}` },
     topbar(app, `${r.mode === 'bonus' ? '보너스 작전' : '출격'} · ${r.zone ? (st.index.zones.find((z) => z.id === r.zone)?.title || '') : '전체'}`,
       { back: null, right: h('button', { class: 'icon-btn', 'aria-label': '지도로(라운드는 이어 풀 수 있어요)', onclick: () => app.go('map') }, '✕') }),
     h('div', { class: 'progress', 'aria-label': `문제 ${r.idx + 1} / ${n}` }, r.q.map((x, i) =>
       h('span', { class: `cell ${x.ok === true ? 'ok' : x.ok === false ? 'no' : ''} ${i === r.idx ? 'current' : ''}` }))),
+    h('div', { class: 'battle-hud' }, portraitSlot, targetSlot),
     h('div', { class: 'feed' },
       h('span', { class: 'kills' }, `킬 ${kills}`),
       r.streak >= 2 ? h('span', { class: 'chip streak' }, STREAK[r.streak] || `${r.streak}연속`) : null,

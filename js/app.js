@@ -308,6 +308,7 @@ export async function main() {
   const { mount } = await import('./dom.js');
   const { renderView } = await import('./views/index.js');
   const { setupSW, applyUpdate } = await import('./sw-client.js');
+  const { preloadSvgs } = await import('./fx/svg.js');
   const root = document.getElementById('app');
   const fetchJson = async (p) => { const r = await fetch(p, { cache: 'no-cache' }); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
   let app = null;
@@ -323,6 +324,8 @@ export async function main() {
     app = createApp({ index, fixedIndex, store, agents, onChange: render });
     globalThis.aceQuest = app; // 디버깅·자동 확인용
     app.toast = toast;
+    const ag = store.getSettings().agent;
+    preloadSvgs(['target-card', 'killcut-basic', ...(ag ? [`emblem-${ag}`] : [])]).catch(() => {});
     app.applyUpdate = () => applyUpdate(app, store);
     window.addEventListener('online', () => app.sync());
     await app.boot();

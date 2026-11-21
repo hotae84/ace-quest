@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <g id="emblem">
+    <path class="bg" fill="currentColor" d="M72 20H184L228 64V176L176 228H80L28 176V64Z"/>
+    <path class="ac" fill="none" stroke="currentColor" stroke-width="10" d="M72 20H184L228 64V176L176 228H80L28 176V64Z"/>
+    <path class="ac" fill="currentColor" d="m128 42 18 44-6 40 20-18 16-44 12 62-16 42-44 26-44-26-16-42 12-46 16 36 18 14-8-44Z"/>
+    <path class="ac2" fill="currentColor" d="m54 130 18 44 42 30-16-30Zm148 0-18 44-42 30 16-30Z"/>
+  </g>
+</svg>

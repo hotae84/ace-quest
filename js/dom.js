@@ -20,3 +20,20 @@ export function h(tag, props = {}, ...children) {
 export function mount(root, ...nodes) {
   root.replaceChildren(...nodes);
 }
+
+// SVG 네임스페이스용. 속성·텍스트만 넣고 innerHTML은 쓰지 않는다(설계 v2 §4)
+const SVG_NS = 'http://www.w3.org/2000/svg';
+export function s(tag, props = {}, ...children) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === 'class') el.setAttribute('class', v);
+    else if (k === 'text') el.textContent = v;
+    else el.setAttribute(k, v === true ? '' : String(v));
+  }
+  for (const c of children.flat(Infinity)) {
+    if (c === null || c === undefined || c === false) continue;
+    el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return el;
+}

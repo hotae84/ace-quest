@@ -3,15 +3,17 @@ const APP_VERSION = '0.1.0';
 const CACHE = `aq-${APP_VERSION}`;
 const PRECACHE = [
   './', 'index.html', 'admin.html', 'replay.html', 'manifest.webmanifest',
-  'css/app.css', 'css/admin.css',
+  'css/app.css', 'css/admin.css', 'css/fx.css',
   'js/app.js', 'js/admin.js', 'js/admin-core.js', 'js/replay.js', 'js/check.js', 'js/content.js', 'js/dom.js', 'js/draw.js', 'js/game.js', 'js/github.js',
   'js/hash.js', 'js/records.js', 'js/rng.js', 'js/store.js', 'js/sw-client.js',
   'js/questions/index.js', 'js/questions/mcq.js', 'js/questions/ox.js', 'js/questions/blank.js', 'js/questions/order.js', 'js/questions/match.js',
   'js/questions/render/choice.js', 'js/questions/render/ox.js', 'js/questions/render/order.js', 'js/questions/render/match.js',
   'js/views/index.js', 'js/views/common.js', 'js/views/setup.js', 'js/views/map.js', 'js/views/battle.js', 'js/views/verdict.js', 'js/views/result.js',
-  'data/zones.json', 'data/agents.json', 'data/versions.json', 'data/cards-z1.json',
+  'data/zones.json', 'data/agents.json', 'data/versions.json', 'data/cards-z1.json', 'data/cards-z2.json', 'data/cards-z4.json', 'data/cards-z5.json',
   'data/fixed-f1.json', 'data/fixed-f2.json', 'data/fixed-f3.json', 'data/fixed-f4.json',
   'js/fixed.js', 'js/questions/fixed.js',
+  'js/fx/config.js', 'js/fx/motion.js', 'js/fx/rank.js', 'js/fx/once.js', 'js/fx/svg.js', 'js/fx/target.js', 'js/fx/killcut.js', 'js/fx/hit.js', 'js/fx/ace.js', 'js/fx/crate.js', 'js/fx/portrait.js',
+  'assets/fx/emblem-jett.svg', 'assets/fx/emblem-phoenix.svg', 'assets/fx/emblem-sage.svg', 'assets/fx/killcut-basic.svg', 'assets/fx/target-card.svg',
   'assets/icons/icon-180.png', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png',
 ];
 

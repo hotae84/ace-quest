@@ -4,6 +4,11 @@ import { renderChoice } from '../questions/render/choice.js';
 import { renderOx } from '../questions/render/ox.js';
 import { renderOrder } from '../questions/render/order.js';
 import { renderMatch } from '../questions/render/match.js';
+import { renderTarget, hpOf, roundKills } from '../fx/target.js';
+import { renderKillCut } from '../fx/killcut.js';
+import { hitVignette } from '../fx/hit.js';
+import { motionEnabled } from '../fx/motion.js';
+import { once } from '../fx/once.js';
 
 const RENDER = { 'mcq-data': renderChoice, 'mcq-combo': renderChoice, 'mcq-sent': renderChoice, 'mcq-neg': renderChoice, 'mcq-fixed': renderChoice, blank: renderChoice, ox: renderOx, order: renderOrder, match: renderMatch };
 
@@ -18,8 +23,20 @@ export function renderVerdict(app) {
   const ok = slot.ok === true;
   const last = r.idx === r.q.length - 1;
   const canRetry = !st.inRetry && app.offerRetry();
+  // 연출은 같은 시도에 한 번만(동기화 등으로 다시 그려져도 재생하지 않는다)
+  const motion = motionEnabled(st.settings);
+  const first = once(`${r.id}:${r.idx}:${st.inRetry ? 'r' : 'm'}`);
+  const before = (st.derived?.mastery.get(target.id) || 0) + roundKills(r, target.id, r.idx) + (st.inRetry && main.ok === true ? 1 : 0);
+  const hpAfter = hpOf(before + (ok ? 1 : 0));
+  const targetSlot = h('div', { class: 'fx-slot' });
+  renderTarget({ name: target.name, hp: hpAfter, emblem: null, motion: motion && first, breakCell: ok && first ? hpAfter + 1 : null }).then((el) => targetSlot.replaceChildren(el));
+  const cutSlot = h('div', { class: 'fx-slot' });
+  if (ok) renderKillCut({ agent, streak: r.streak, motion: motion && first, target: target.name }).then((el) => cutSlot.replaceChildren(el));
+  if (!ok && first) hitVignette(document.body, { motion });
   return h('div', { class: `page verdict ${ok ? 'ok' : 'no'}`, style: `--ac:${agent.color}` },
     topbar(app, ok ? '클리어' : '피격', { back: null }),
+    cutSlot,
+    targetSlot,
     h('div', { class: 'verdict-banner' },
       h('strong', {}, ok ? `${agent.name} — ${target.name} 클리어` : `${target.name}에 피격`),
       r.streak >= 2 && ok ? h('span', { class: 'chip streak' }, `${r.streak}연속`) : null),

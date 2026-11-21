@@ -16,3 +16,4 @@ import './fixed-gen.test.js';
 import './fixed-draw.test.js';
 import './app-fixed.test.js';
 import './fx.test.js';
+import './fx-scene.test.js';

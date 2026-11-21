@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <g id="emblem">
+    <path class="bg" fill="currentColor" d="M72 20H184L228 64V176L176 228H80L28 176V64Z"/>
+    <path class="ac" fill="none" stroke="currentColor" stroke-width="10" d="M72 20H184L228 64V176L176 228H80L28 176V64Z"/>
+    <path class="ac" fill="currentColor" d="m128 48 42 24v56l-42 30-42-30V72Z"/>
+    <path class="bg" fill="none" stroke="currentColor" stroke-width="8" d="m90 75 38 25 38-25m-38 25v48"/>
+    <path class="ac2" fill="none" stroke="currentColor" stroke-width="10" d="M62 170Q128 142 194 170M72 194Q128 170 184 194"/>
+  </g>
+</svg>

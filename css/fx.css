@@ -1,0 +1,122 @@
+/* 연출 레이어(설계 v2 §4). 색·움직임은 전부 여기. SVG에는 모양과 클래스만 있다.
+   움직임이 꺼지면(설정 또는 OS reduced-motion) .fx-done 정적 규칙만 적용된다 */
+.ac { color: var(--ac, var(--accent)); } .ac2 { color: var(--ac, var(--accent)); opacity: .55; }
+.bg { color: var(--bg); } .ink { color: var(--ink); } .muted { color: #5b6b7a; }
+.danger { color: var(--accent); } .ok { color: var(--ok); } .hint { color: var(--hint); }
+.fx-slot:empty { display: none; }
+
+/* ---- 표적 카드 ---- */
+.target-card { position: relative; width: min(100%, 380px); margin: 0 auto 10px; color: var(--ink); }
+.target-card .tc-svg { display: block; width: 100%; height: auto; }
+.tc-emblem { position: absolute; left: 7.5%; top: 12%; width: 30%; height: 48%; display: grid; place-items: center; }
+.tc-emblem svg { width: 86%; height: 86%; }
+.tc-initial, .pt-initial, .ace-initial { display: grid; place-items: center; width: 70%; height: 70%; border-radius: 50%; background: var(--ac, var(--line)); color: var(--bg); font-weight: 900; font-size: 1.4rem; }
+.tc-name { position: absolute; left: 40%; top: 16%; right: 8%; font-weight: 900; font-size: 1.05rem; line-height: 1.25; text-shadow: 0 1px 0 var(--bg); }
+.tc-hp-text { position: absolute; right: 8%; bottom: 12%; font-weight: 700; color: var(--ok); }
+.hp-cell { transition: opacity .2s; } .hp-off { opacity: .16; }
+.stamp-off { opacity: 0; } .stamp-on { opacity: 1; }
+.tc-stamp-text { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-12deg); font-weight: 900; font-size: 2rem; letter-spacing: .3em; color: var(--accent); text-shadow: 0 0 12px rgba(255, 70, 85, .5); }
+.target-card.down .tc-name { opacity: .6; }
+@keyframes hp-break { 0% { opacity: 1; transform: scale(1); } 35% { opacity: 1; transform: scale(1.35); fill: var(--accent); } 100% { opacity: .16; transform: scale(1); } }
+@keyframes tc-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 55% { transform: translateX(4px); } 80% { transform: translateX(-2px); } }
+@keyframes stamp-in { 0% { opacity: 0; transform: scale(2.2) rotate(-12deg); } 60% { opacity: 1; transform: scale(.9) rotate(-12deg); } 100% { opacity: 1; transform: scale(1) rotate(-12deg); } }
+.target-card.fx-hp-hit:not(.fx-done) { animation: tc-shake .4s ease-out; }
+.target-card.fx-hp-hit:not(.fx-done) .hp-break { animation: hp-break .4s ease-out forwards; transform-box: fill-box; transform-origin: center; }
+.target-card.fx-hp-hit:not(.fx-done) .stamp-on { animation: stamp-in .4s ease-out .1s both; transform-box: fill-box; transform-origin: center; }
+.target-card.fx-hp-hit:not(.fx-done) .tc-stamp-text { animation: stamp-in .4s ease-out .1s both; transform: translate(-50%, -50%) rotate(-12deg); }
+
+/* ---- 킬 컷 ---- */
+.killcut { position: relative; width: min(100%, 520px); margin: 0 auto 12px; border-radius: 14px; background: var(--card); overflow: hidden; color: var(--ink); }
+.killcut .kc-svg { display: block; width: 100%; height: auto; }
+.kc-feed { position: absolute; left: 12px; top: 10px; display: flex; gap: 6px; align-items: center; font-weight: 800; font-size: .9rem; background: rgba(15, 25, 35, .75); padding: 4px 10px; border-radius: 8px; }
+.kc-icon { color: var(--ac, var(--accent)); }
+.kc-tag { position: absolute; left: 71.2%; top: 5.3%; width: 27.2%; height: 13.7%; display: grid; place-items: center; font-weight: 900; font-size: .85rem; color: var(--ink); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 6px; opacity: 0; }
+.killcut.fx-done .kc-tag { opacity: 1; }
+.killcut.fx-killcut:not(.fx-done) .kc-tag, .killcut.fx-streak:not(.fx-done) .kc-tag { animation: kc-tag var(--kc, .6s) ease-out both; }
+.kc-badge { position: absolute; right: 12px; bottom: 10px; padding: 6px 14px; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 900; letter-spacing: .05em; transform: skewX(-8deg); }
+.killcut #muzzle, .killcut #tag { opacity: 0; }
+.killcut #shards polygon { transform-box: fill-box; transform-origin: center; }
+.killcut.fx-done #muzzle { opacity: 0; } .killcut.fx-done #tag { opacity: 1; }
+.killcut.fx-done #target { opacity: .35; transform: rotate(-80deg); transform-box: fill-box; transform-origin: center bottom; }
+.killcut.fx-done #shards { opacity: 0; } .killcut.fx-done #tracer { opacity: 0; }
+@keyframes kc-box { 0% { opacity: 0; transform: translateY(-8px); } 15%, 100% { opacity: 1; transform: translateY(0); } }
+@keyframes kc-muzzle { 0%, 10% { opacity: 0; } 14% { opacity: 1; transform: scale(1.4); } 30%, 100% { opacity: 0; } }
+@keyframes kc-tracer { 0%, 12% { stroke-dashoffset: 400; opacity: 1; } 24% { stroke-dashoffset: 0; opacity: 1; } 40%, 100% { opacity: 0; } }
+@keyframes kc-target { 0%, 24% { transform: none; opacity: 1; } 60%, 100% { transform: rotate(-80deg); opacity: .35; } }
+@keyframes kc-shard { 0%, 24% { transform: none; opacity: 1; } 100% { transform: translate(var(--dx, 40px), var(--dy, -30px)) rotate(200deg) scale(.4); opacity: 0; } }
+@keyframes kc-tag { 0%, 30% { opacity: 0; transform: scale(.6); } 45% { opacity: 1; transform: scale(1.1); } 55%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes kc-badge { 0%, 40% { opacity: 0; transform: skewX(-8deg) scale(.4); } 60% { opacity: 1; transform: skewX(-8deg) scale(1.25); } 75%, 100% { opacity: 1; transform: skewX(-8deg) scale(1); } }
+.killcut.fx-killcut:not(.fx-done), .killcut.fx-streak:not(.fx-done) { animation: kc-box .6s ease-out both; }
+.killcut.fx-streak:not(.fx-done) { animation-duration: .9s; }
+.killcut.fx-killcut:not(.fx-done) #muzzle, .killcut.fx-streak:not(.fx-done) #muzzle { animation: kc-muzzle var(--kc, .6s) linear both; transform-box: fill-box; transform-origin: center; }
+.killcut.fx-killcut:not(.fx-done) #tracer, .killcut.fx-streak:not(.fx-done) #tracer { stroke-dasharray: 400; animation: kc-tracer var(--kc, .6s) linear both; }
+.killcut.fx-killcut:not(.fx-done) #target, .killcut.fx-streak:not(.fx-done) #target { animation: kc-target var(--kc, .6s) ease-in both; transform-box: fill-box; transform-origin: center bottom; }
+.killcut.fx-killcut:not(.fx-done) #shards polygon, .killcut.fx-streak:not(.fx-done) #shards polygon { animation: kc-shard var(--kc, .6s) ease-out both; }
+.killcut.fx-killcut:not(.fx-done) #tag, .killcut.fx-streak:not(.fx-done) #tag { animation: kc-tag var(--kc, .6s) ease-out both; transform-box: fill-box; transform-origin: center; }
+.killcut.fx-streak { --kc: .9s; }
+.killcut.fx-streak:not(.fx-done) .kc-badge { animation: kc-badge .9s ease-out both; }
+#shards polygon:nth-child(odd) { --dx: 60px; --dy: -50px; } #shards polygon:nth-child(even) { --dx: -50px; --dy: 40px; }
+#shards polygon:nth-child(3n) { --dx: 20px; --dy: 70px; } #shards polygon:nth-child(4n) { --dx: -70px; --dy: -20px; }
+
+/* ---- 피격 ---- */
+.hit-vignette { position: fixed; inset: 0; pointer-events: none; z-index: 50; box-shadow: inset 0 0 90px 36px rgba(255, 70, 85, .6); }
+@keyframes hit-fade { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes body-shake { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-6px, 2px); } 45% { transform: translate(5px, -2px); } 70% { transform: translate(-3px, 1px); } }
+.hit-vignette.fx-hit:not(.fx-done) { animation: hit-fade .4s ease-out both; }
+.fx-shake { animation: body-shake .4s ease-out; }
+
+/* ---- 에이스 ---- */
+.ace-overlay { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; align-content: center; gap: 10px; background: radial-gradient(circle at 50% 45%, #22323f, var(--bg) 70%); color: var(--ink); cursor: pointer; }
+.ace-emblem { width: 160px; height: 160px; display: grid; place-items: center; }
+.ace-emblem svg { width: 100%; height: 100%; }
+.ace-word { font-size: clamp(64px, 20vw, 140px); font-weight: 900; letter-spacing: .18em; line-height: 1; color: var(--ac, var(--accent)); text-shadow: 0 0 24px color-mix(in srgb, var(--ac, var(--accent)) 60%, transparent); }
+.ace-sub { font-weight: 800; font-size: 1.1rem; } .ace-skip { color: var(--muted); font-size: .85rem; margin-top: 16px; }
+.ace-shards { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.ace-shard { position: absolute; left: 50%; top: 45%; width: 14px; height: 14px; background: var(--ac, var(--accent)); clip-path: polygon(50% 0, 100% 60%, 20% 100%); opacity: 0; }
+@keyframes ace-in { 0% { opacity: 0; } 10%, 100% { opacity: 1; } }
+@keyframes ace-emblem { 0% { transform: scale(.2) rotate(-30deg); opacity: 0; } 30% { transform: scale(1.15); opacity: 1; } 45%, 100% { transform: scale(1); } }
+@keyframes ace-word { 0%, 20% { transform: scale(3); opacity: 0; } 35% { transform: scale(.95); opacity: 1; } 45%, 100% { transform: scale(1); opacity: 1; } }
+@keyframes ace-shard { 0%, 30% { transform: translate(0, 0) rotate(0); opacity: 0; } 35% { opacity: 1; } 100% { transform: translate(var(--sx), var(--sy)) rotate(540deg); opacity: 0; } }
+.ace-overlay.fx-ace { animation: ace-in 3s linear both; }
+.ace-overlay.fx-ace .ace-emblem { animation: ace-emblem 3s ease-out both; }
+.ace-overlay.fx-ace .ace-word { animation: ace-word 3s ease-out both; }
+.ace-overlay.fx-ace .ace-shard { animation: ace-shard 3s ease-out both; }
+.ace-shard.s0 { --sx: 42vw; --sy: -30vh; } .ace-shard.s1 { --sx: -40vw; --sy: -22vh; } .ace-shard.s2 { --sx: 36vw; --sy: 28vh; } .ace-shard.s3 { --sx: -34vw; --sy: 32vh; }
+.ace-shard.s4 { --sx: 12vw; --sy: -44vh; } .ace-shard.s5 { --sx: -10vw; --sy: 42vh; } .ace-shard.s6 { --sx: 46vw; --sy: 6vh; } .ace-shard.s7 { --sx: -46vw; --sy: 4vh; }
+.ace-shard.s8 { --sx: 26vw; --sy: -40vh; } .ace-shard.s9 { --sx: -24vw; --sy: -38vh; } .ace-shard.s10 { --sx: 22vw; --sy: 40vh; } .ace-shard.s11 { --sx: -20vw; --sy: 38vh; }
+.ace-shard.s12 { --sx: 40vw; --sy: -12vh; } .ace-shard.s13 { --sx: -42vw; --sy: 14vh; } .ace-shard.s14 { --sx: 6vw; --sy: -46vh; } .ace-shard.s15 { --sx: -4vw; --sy: 46vh; }
+.ace-banner { padding: 12px 16px; border-radius: 14px; background: var(--accent-soft); border-left: 6px solid var(--accent); font-weight: 900; color: var(--accent); margin-bottom: 12px; }
+
+/* ---- 보급 상자 ---- */
+.crates { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.crate { position: relative; height: 92px; border-radius: 12px; border: 2px solid var(--hint); background: var(--hint-soft); color: var(--hint); font-weight: 900; overflow: hidden; padding: 0; }
+.crate.ace { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.crate-lid { position: absolute; left: 0; right: 0; top: 0; height: 34%; background: currentColor; opacity: .85; transform-origin: top center; transition: transform .3s; }
+.crate-body { position: absolute; inset: 34% 0 0; display: grid; place-items: center; }
+.crate-result { position: absolute; inset: 0; display: none; place-items: center; font-size: 1.3rem; background: var(--card); }
+.crate.open .crate-lid { transform: rotateX(-120deg) translateY(-4px); }
+.crate.won .crate-result, .crate.lost .crate-result { display: grid; }
+.crate.lost .crate-result { color: var(--muted); }
+@keyframes crate-open { 0% { transform: scale(1); } 30% { transform: scale(1.08) rotate(-3deg); } 60% { transform: scale(1.05) rotate(3deg); } 100% { transform: scale(1); } }
+.crate.fx-crate:not(.fx-done) { animation: crate-open .8s ease-out both; }
+
+/* ---- 요원 포트레이트·계급장 ---- */
+.portrait { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pt-emblem { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; background: var(--card); border: 2px solid var(--ac, var(--line)); }
+.portrait.md .pt-emblem { width: 60px; height: 60px; }
+.pt-emblem svg { width: 84%; height: 84%; }
+.pt-meta { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.pt-name { font-weight: 900; }
+.pt-rank { display: flex; align-items: center; gap: 3px; font-size: .8rem; color: var(--muted); }
+.pt-rank b { margin-left: 4px; color: var(--ink); }
+.pip { width: 8px; height: 8px; background: var(--line); transform: rotate(45deg); display: inline-block; }
+.pip.on { background: var(--ac, var(--accent)); }
+.battle-hud { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+.battle-hud .portrait { flex: none; }
+.battle-hud .fx-slot { flex: 1; min-width: 0; display: flex; justify-content: center; }
+.battle-hud .target-card { width: min(100%, 340px); margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .killcut #muzzle { opacity: 0; } .killcut #tag { opacity: 1; } .killcut #shards, .killcut #tracer { opacity: 0; }
+  .killcut #target { opacity: .35; transform: rotate(-80deg); transform-box: fill-box; transform-origin: center bottom; }
+}
