@@ -1,10 +1,98 @@
 [
-  { "id": "jett", "name": "제트", "color": "#7fd3ff", "line": "바람처럼 빠르게." },
-  { "id": "sage", "name": "세이지", "color": "#6ee7c8", "line": "차분하게, 하나씩." },
-  { "id": "phoenix", "name": "피닉스", "color": "#ff8a4c", "line": "내가 해결할게." },
-  { "id": "sova", "name": "소바", "color": "#8fb4ff", "line": "흔적은 남는다." },
-  { "id": "reyna", "name": "레이나", "color": "#c77dff", "line": "지금은 내 시간." },
-  { "id": "killjoy", "name": "킬조이", "color": "#ffd166", "line": "계산은 끝났어." },
-  { "id": "omen", "name": "오멘", "color": "#9aa5ff", "line": "그림자 속에서." },
-  { "id": "cypher", "name": "사이퍼", "color": "#e8e4d8", "line": "다 보고 있었다." }
+  {
+    "id": "jett",
+    "name": "제트",
+    "color": "#7fd3ff",
+    "line": "바람처럼 빠르게.",
+    "abilities": [
+      { "slot": "ability1", "name": "상승 기류" },
+      { "slot": "ability2", "name": "순풍" },
+      { "slot": "grenade", "name": "연막 폭발" },
+      { "slot": "ultimate", "name": "칼날 폭풍" }
+    ]
+  },
+  {
+    "id": "sage",
+    "name": "세이지",
+    "color": "#6ee7c8",
+    "line": "차분하게, 하나씩.",
+    "abilities": [
+      { "slot": "ability1", "name": "둔화 구슬" },
+      { "slot": "ability2", "name": "회복 구슬" },
+      { "slot": "grenade", "name": "장벽 구슬" },
+      { "slot": "ultimate", "name": "부활" }
+    ]
+  },
+  {
+    "id": "phoenix",
+    "name": "피닉스",
+    "color": "#ff8a4c",
+    "line": "내가 해결할게.",
+    "abilities": [
+      { "slot": "ability1", "name": "뜨거운 손" },
+      { "slot": "ability2", "name": "커브볼" },
+      { "slot": "grenade", "name": "불길" },
+      { "slot": "ultimate", "name": "역습" }
+    ]
+  },
+  {
+    "id": "sova",
+    "name": "소바",
+    "color": "#8fb4ff",
+    "line": "흔적은 남는다.",
+    "abilities": [
+      { "slot": "ability1", "name": "충격 화살" },
+      { "slot": "ability2", "name": "정찰용 화살" },
+      { "slot": "grenade", "name": "올빼미 드론" },
+      { "slot": "ultimate", "name": "사냥꾼의 분노" }
+    ]
+  },
+  {
+    "id": "reyna",
+    "name": "레이나",
+    "color": "#c77dff",
+    "line": "지금은 내 시간.",
+    "abilities": [
+      { "slot": "ability1", "name": "포식" },
+      { "slot": "ability2", "name": "무시" },
+      { "slot": "grenade", "name": "눈총" },
+      { "slot": "ultimate", "name": "여제" }
+    ]
+  },
+  {
+    "id": "killjoy",
+    "name": "킬조이",
+    "color": "#ffd166",
+    "line": "계산은 끝났어.",
+    "abilities": [
+      { "slot": "ability1", "name": "알람봇" },
+      { "slot": "ability2", "name": "포탑" },
+      { "slot": "grenade", "name": "나노스웜" },
+      { "slot": "ultimate", "name": "봉쇄" }
+    ]
+  },
+  {
+    "id": "omen",
+    "name": "오멘",
+    "color": "#9aa5ff",
+    "line": "그림자 속에서.",
+    "abilities": [
+      { "slot": "ability1", "name": "피해망상" },
+      { "slot": "ability2", "name": "어둠의 장막" },
+      { "slot": "grenade", "name": "어둠의 발자국" },
+      { "slot": "ultimate", "name": "그림자 습격" }
+    ]
+  },
+  {
+    "id": "cypher",
+    "name": "사이퍼",
+    "color": "#e8e4d8",
+    "line": "다 보고 있었다.",
+    "abilities": [
+      { "slot": "ability1", "name": "사이버 감옥" },
+      { "slot": "ability2", "name": "스파이캠" },
+      { "slot": "grenade", "name": "함정" },
+      { "slot": "ultimate", "name": "신경 절도" }
+    ]
+  }
 ]

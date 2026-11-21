@@ -62,7 +62,7 @@ test('crate: 개봉 상태는 키별로 기억되어 재렌더링 뒤 복원된�
 
 // ---- 요원 초상(공식 아이콘 WebP) ----
 import { avatarUrl, IMAGE_NOTICE } from '../js/fx/avatar.js';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 test('avatarUrl: 요원 id → assets/agents/<id>.webp, 이상한 id는 null(경로 조작 차단)', () => {
@@ -85,4 +85,32 @@ test('agents.json의 모든 요원에 초상 파일이 있고 sw PRECACHE에 들
     ok(sw.includes(`'${p}'`), `${p} 프리캐시`);
   }
   ok(agents.length === 8);
+});
+
+// ---- 0.3.0: 전신·능력 아이콘 ----
+import { fullUrl, abilityUrl, ABILITY_SLOTS } from '../js/fx/avatar.js';
+
+test('fullUrl/abilityUrl: 검증된 id·slot만 경로로, 아니면 null', () => {
+  eq(fullUrl('jett'), 'assets/agents/jett-full.webp');
+  eq(abilityUrl('sova', 'grenade'), 'assets/abilities/sova-grenade.webp');
+  eq(ABILITY_SLOTS, ['ability1', 'ability2', 'grenade', 'ultimate']);
+  eq([fullUrl('../x'), fullUrl(''), abilityUrl('sova', 'passive'), abilityUrl('Sova', 'ability1'), abilityUrl('sova', '../a')], [null, null, null, null, null]);
+});
+
+test('agents.json: 요원마다 abilities 4개(slot 순서 고정), 전신·능력 파일 존재·sw 프리캐시 포함', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const agents = JSON.parse(readFileSync(`${root}data/agents.json`, 'utf8'));
+  const sw = readFileSync(`${root}sw.js`, 'utf8');
+  let bytes = 0;
+  for (const a of agents) {
+    eq(a.abilities.map((x) => x.slot), ABILITY_SLOTS, `${a.id} slot 순서`);
+    ok(a.abilities.every((x) => typeof x.name === 'string' && x.name.length > 0), `${a.id} 능력 이름`);
+    for (const p of [fullUrl(a.id), ...a.abilities.map((x) => abilityUrl(a.id, x.slot))]) {
+      ok(existsSync(`${root}${p}`), `${p} 파일`);
+      ok(sw.includes(`'${p}'`), `${p} 프리캐시`);
+      bytes += statSync(`${root}${p}`).size;
+    }
+  }
+  ok(bytes <= 700 * 1024, `전신+능력 합계 ${bytes}B ≤ 700KB`);
+  ok(sw.includes("APP_VERSION = '0.3.0'"), 'sw 0.3.0');
 });

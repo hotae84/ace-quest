@@ -5,7 +5,12 @@ import { h } from '../dom.js';
 export const IMAGE_NOTICE = '요원 이미지 © Riot Games. 비상업 팬 프로젝트이며 Riot Games가 보증하거나 후원하지 않습니다.';
 
 const ID_RE = /^[a-z0-9-]+$/;
-export const avatarUrl = (id) => (typeof id === 'string' && ID_RE.test(id) ? `assets/agents/${id}.webp` : null);
+const okId = (id) => typeof id === 'string' && ID_RE.test(id);
+export const avatarUrl = (id) => (okId(id) ? `assets/agents/${id}.webp` : null);
+// 전신 일러스트(900px)·능력 아이콘(128px) — 0.3.0 킬 컷·에이스용. slot은 네 개 고정(passive 제외)
+export const ABILITY_SLOTS = ['ability1', 'ability2', 'grenade', 'ultimate'];
+export const fullUrl = (id) => (okId(id) ? `assets/agents/${id}-full.webp` : null);
+export const abilityUrl = (id, slot) => (okId(id) && ABILITY_SLOTS.includes(slot) ? `assets/abilities/${id}-${slot}.webp` : null);
 
 // fallback: 이미지가 없을 때 대신 들어갈 노드(또는 노드를 만드는 함수)
 export function avatarImg(agent, { cls = 'avatar', fallback = null } = {}) {
