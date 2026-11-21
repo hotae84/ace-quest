@@ -5,7 +5,7 @@ import { renderOx } from '../questions/render/ox.js';
 import { renderOrder } from '../questions/render/order.js';
 import { renderMatch } from '../questions/render/match.js';
 import { renderTarget, hpOf, roundKills } from '../fx/target.js';
-import { renderKillCut } from '../fx/killcut.js';
+import { renderKillCut, pickVariant, pickAbility, roundSalt, killSeq } from '../fx/killcut.js';
 import { hitVignette } from '../fx/hit.js';
 import { motionEnabled } from '../fx/motion.js';
 import { once } from '../fx/once.js';
@@ -31,7 +31,11 @@ export function renderVerdict(app) {
   const targetSlot = h('div', { class: 'fx-slot' });
   renderTarget({ name: target.name, hp: hpAfter, emblem: null, motion: motion && first, breakCell: ok && first ? hpAfter + 1 : null }).then((el) => targetSlot.replaceChildren(el));
   const cutSlot = h('div', { class: 'fx-slot' });
-  if (ok) renderKillCut({ agent, streak: r.streak, motion: motion && first, target: target.name }).then((el) => cutSlot.replaceChildren(el));
+  if (ok) {
+    // 변형은 라운드 id·이번 시도 이전 정답 수로 결정적(재렌더링에도 같다). 기록과 무관
+    const seq = killSeq(r, r.idx, st.inRetry); const salt = roundSalt(r.id);
+    cutSlot.append(renderKillCut({ agent, target: target.name, streak: r.streak, variant: pickVariant({ seq, salt }), ability: pickAbility(agent.abilities, { seq, salt }), masteryAfter: Math.min(before + 1, 5), motion: motion && first }));
+  }
   if (!ok && first) hitVignette(document.body, { motion });
   return h('div', { class: `page verdict ${ok ? 'ok' : 'no'}`, style: `--ac:${agent.color}` },
     topbar(app, ok ? '클리어' : '피격', { back: null }),

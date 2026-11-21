@@ -1,7 +1,6 @@
 import { test, eq, ok } from './harness.js';
 import { FX } from '../js/fx/config.js';
 import { hpOf, roundKills } from '../js/fx/target.js';
-import { streakLabel, killcutDuration } from '../js/fx/killcut.js';
 import { allowedTag, allowedAttr } from '../js/fx/svg.js';
 import { once, resetOnce } from '../js/fx/once.js';
 import { crateLabel } from '../js/fx/crate.js';
@@ -19,12 +18,6 @@ test('roundKills: 라운드 안에서 같은 표적을 맞힌 수(현재 문항 
   eq(roundKills(round, 'c02', 4), 2, '재도전 정답도 센다');
   eq(roundKills(round, 'c02', 1), 0);
   eq(roundKills(null, 'c01', 0), 0);
-});
-
-test('streakLabel·killcutDuration: 더블·트리플·쿼드라, 연속이면 길어진다', () => {
-  eq([streakLabel(1), streakLabel(2), streakLabel(3), streakLabel(4), streakLabel(5)], [null, '더블 킬', '트리플 킬', '쿼드라 킬', '5연속 킬']);
-  eq(killcutDuration(1), FX.killcut);
-  eq(killcutDuration(2), FX.streak);
 });
 
 test('allowedTag/allowedAttr: 검사 도구와 같은 허용 목록(런타임 재조립용)', () => {

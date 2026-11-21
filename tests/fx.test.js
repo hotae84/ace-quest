@@ -4,8 +4,27 @@ import { motionEnabled, play } from '../js/fx/motion.js';
 import { rankOf, RANKS } from '../js/fx/rank.js';
 import { validateSvg } from '../../tools/validate-svg.mjs';
 
-test('FX 상수(설계 v2 §4)', () => {
-  eq([FX.killcut, FX.streak, FX.ace, FX.hit, FX.crate, FX.maxNodes, FX.maxShards], [600, 900, 3000, 400, 800, 60, 24]);
+test('FX 상수(설계 v2 §4, 0.3.0 킬 컷 v2 §3.2)', () => {
+  eq([FX.kc.headshot, FX.kc.ability, FX.kc.melee, FX.kcSlow, FX.ace, FX.hit, FX.crate, FX.maxNodes, FX.maxShards], [1300, 1750, 1300, 1.5, 3000, 400, 800, 60, 24]);
+  eq(FX.killcut, undefined); eq(FX.streak, undefined);
+});
+
+// 킬 컷 CSS: @keyframes 안 속성은 transform·opacity·stroke-dashoffset만, filter 없음(iPad 성능·설계 §3.2)
+test('killcut.css 애니메이션 속성 제한', async () => {
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync(new URL('../css/killcut.css', import.meta.url), 'utf8');
+  ok(!/filter\s*:/.test(css), 'filter 없음');
+  const allowed = new Set(['transform', 'opacity', 'stroke-dashoffset']);
+  const bad = [];
+  const re = /@keyframes\s+([\w-]+)\s*\{/g; let m; let count = 0;
+  while ((m = re.exec(css))) {
+    let depth = 1; let i = re.lastIndex; const start = i;
+    while (depth && i < css.length) { if (css[i] === '{') depth++; else if (css[i] === '}') depth--; i++; }
+    const body = css.slice(start, i - 1); count++;
+    for (const d of body.matchAll(/([a-z-]+)\s*:/g)) if (!allowed.has(d[1])) bad.push(`${m[1]}:${d[1]}`);
+  }
+  ok(count >= 10, `keyframes ${count}개 검사`);
+  eq(bad, [], '허용 외 속성');
 });
 
 test('motionEnabled: 설정 off 또는 OS reduced-motion이면 false', () => {

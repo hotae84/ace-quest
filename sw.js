@@ -3,7 +3,7 @@ const APP_VERSION = '0.3.0';
 const CACHE = `aq-${APP_VERSION}`;
 const PRECACHE = [
   './', 'index.html', 'admin.html', 'replay.html', 'manifest.webmanifest',
-  'css/app.css', 'css/admin.css', 'css/fx.css',
+  'css/app.css', 'css/admin.css', 'css/fx.css', 'css/killcut.css',
   'js/app.js', 'js/admin.js', 'js/admin-core.js', 'js/replay.js', 'js/check.js', 'js/content.js', 'js/dom.js', 'js/draw.js', 'js/game.js', 'js/github.js',
   'js/hash.js', 'js/records.js', 'js/rng.js', 'js/store.js', 'js/sw-client.js',
   'js/questions/index.js', 'js/questions/mcq.js', 'js/questions/ox.js', 'js/questions/blank.js', 'js/questions/order.js', 'js/questions/match.js',
@@ -13,7 +13,7 @@ const PRECACHE = [
   'data/fixed-f1.json', 'data/fixed-f2.json', 'data/fixed-f3.json', 'data/fixed-f4.json',
   'js/fixed.js', 'js/questions/fixed.js',
   'js/fx/config.js', 'js/fx/motion.js', 'js/fx/rank.js', 'js/fx/once.js', 'js/fx/svg.js', 'js/fx/target.js', 'js/fx/killcut.js', 'js/fx/hit.js', 'js/fx/ace.js', 'js/fx/crate.js', 'js/fx/portrait.js', 'js/fx/avatar.js',
-  'assets/fx/emblem-jett.svg', 'assets/fx/emblem-phoenix.svg', 'assets/fx/emblem-sage.svg', 'assets/fx/killcut-basic.svg', 'assets/fx/target-card.svg',
+  'assets/fx/target-card.svg',
   'assets/agents/jett.webp', 'assets/agents/sage.webp', 'assets/agents/phoenix.webp', 'assets/agents/sova.webp', 'assets/agents/reyna.webp', 'assets/agents/killjoy.webp', 'assets/agents/omen.webp', 'assets/agents/cypher.webp',
   'assets/agents/jett-full.webp', 'assets/agents/sage-full.webp', 'assets/agents/phoenix-full.webp', 'assets/agents/sova-full.webp', 'assets/agents/reyna-full.webp', 'assets/agents/killjoy-full.webp', 'assets/agents/omen-full.webp', 'assets/agents/cypher-full.webp',
   'assets/abilities/jett-ability1.webp', 'assets/abilities/jett-ability2.webp', 'assets/abilities/jett-grenade.webp', 'assets/abilities/jett-ultimate.webp',

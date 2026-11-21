@@ -326,7 +326,9 @@ export async function main() {
     globalThis.aceQuest = app; // 디버깅·자동 확인용
     app.toast = toast;
     const ag = store.getSettings().agent;
-    preloadSvgs(['target-card', 'killcut-basic', ...(ag ? [`emblem-${ag}`] : [])]).catch(() => {});
+    preloadSvgs(['target-card']).catch(() => {});
+    // 현재 요원의 전신·능력 4종만 미리 디코딩(킬 컷·에이스)
+    if (ag) import('./fx/avatar.js').then(({ fullUrl, abilityUrl, ABILITY_SLOTS }) => { for (const u of [fullUrl(ag), ...ABILITY_SLOTS.map((sl) => abilityUrl(ag, sl))]) if (u) { const im = new Image(); im.src = u; } }).catch(() => {});
     app.applyUpdate = () => applyUpdate(app, store);
     window.addEventListener('online', () => app.sync());
     await app.boot();

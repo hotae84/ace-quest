@@ -1,0 +1,127 @@
+/* 킬 컷 v2(설계 0.3.0 §3). 애니메이션 속성은 transform·opacity·stroke-dashoffset만, filter 없음(iPad).
+   타임라인: 컨테이너 .kc의 유일한 애니메이션 kc-life 길이 = killcutDuration → animationend로 fx-done.
+   --kcs: 슬로우 배수(1 또는 1.5). 모든 자식의 duration·delay에 곱한다. .fx-done은 마지막 장면을 정적으로 그린다 */
+.kc { --teal: #1ee6d2; --kcs: 1; position: relative; width: min(100%, 560px); aspect-ratio: 744 / 360; margin: 0 auto 12px; border-radius: 16px; overflow: hidden; color: var(--ink);
+  background: radial-gradient(60% 90% at 18% 60%, color-mix(in srgb, var(--ac, var(--accent)) 28%, transparent), transparent 70%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, .025) 0 2px, transparent 2px 14px), linear-gradient(180deg, #152130, var(--bg) 70%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .45); }
+.kc * { box-sizing: border-box; }
+.kc-inner { position: absolute; inset: 0; }
+.kc-band { position: absolute; left: -10%; top: -20%; width: 46%; height: 140%; transform: skewX(-16deg); opacity: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 30%, transparent), color-mix(in srgb, var(--accent) 8%, transparent)); }
+.kc-glow { position: absolute; left: -6%; top: 10%; width: 44%; height: 80%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--ac, var(--accent)) 45%, transparent), transparent 70%); }
+.kc-shooter { position: absolute; left: -2%; bottom: -62%; height: 168%; width: auto; opacity: 0; }
+.kc-scan { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: multiply; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .14) 0 1px, transparent 1px 4px); }
+.kc-chip { position: absolute; left: 3%; top: 5%; padding: 5px 11px; border-radius: 999px; background: rgba(15, 25, 35, .85); border: 1px solid var(--line); font-weight: 900; font-size: .9rem; }
+.kc-chip i { color: var(--ac, var(--accent)); font-style: normal; }
+.kc-tag { position: absolute; right: 3%; top: 5%; max-width: 60%; padding: 6px 12px 6px 16px; background: var(--ink); color: var(--bg); font-weight: 900; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+.kc-tag b { color: var(--accent); margin-right: 6px; }
+.kc-tgt { position: absolute; right: 7%; top: 17%; width: 30%; height: 66%; }
+.kc-panel { position: absolute; inset: 0; border: 2px solid color-mix(in srgb, var(--accent) 80%, #fff); border-radius: 10px; display: grid; place-items: center; text-align: center; padding: 12px;
+  background: linear-gradient(180deg, rgba(255, 70, 85, .22), rgba(255, 70, 85, .06)), repeating-linear-gradient(0deg, rgba(255, 70, 85, .18) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255, 70, 85, .18) 0 1px, transparent 1px 12px);
+  box-shadow: 0 0 24px rgba(255, 70, 85, .35), inset 0 0 30px rgba(255, 70, 85, .15); }
+.kc-panel small { position: absolute; top: 8px; left: 10px; font-size: .62rem; letter-spacing: .2em; color: var(--accent); font-weight: 800; }
+.kc-name { font-weight: 900; font-size: clamp(12px, 2.4vw, 18px); line-height: 1.25; text-shadow: 0 2px 0 #000; }
+.kc-ret { position: absolute; left: 50%; top: 50%; width: 46%; aspect-ratio: 1; border: 2px solid var(--ink); border-radius: 50%; transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+.kc-ret::before, .kc-ret::after { content: ""; position: absolute; background: var(--ink); }
+.kc-ret::before { left: 50%; top: -18%; width: 2px; height: 136%; transform: translateX(-50%); }
+.kc-ret::after { top: 50%; left: -18%; height: 2px; width: 136%; transform: translateY(-50%); }
+.kc-ret-hot { position: absolute; inset: -3px; border-radius: 50%; border: 3px solid var(--accent); box-shadow: 0 0 16px var(--accent); opacity: 0; }
+.kc-flash { position: absolute; left: 50%; top: 50%; width: 40%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%) scale(0); opacity: 0; background: radial-gradient(circle, #fff, var(--accent) 45%, transparent 70%); }
+.v-ability .kc-flash { background: radial-gradient(circle, #fff, var(--teal) 45%, transparent 70%); }
+.kc-ring { position: absolute; left: 50%; top: 50%; width: 60%; aspect-ratio: 1; border-radius: 50%; border: 4px solid var(--teal); transform: translate(-50%, -50%) scale(0); opacity: 0; }
+.kc-tracer { position: absolute; left: 38%; top: 44%; width: 30%; height: 3px; transform-origin: left; transform: scaleX(0); opacity: 0; box-shadow: 0 0 10px var(--ac, var(--accent)); background: linear-gradient(90deg, transparent, #fff 60%, var(--ac, var(--accent))); }
+.kc-tracer.t2 { top: 52%; }
+.kc-cracks { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; border-radius: 10px; }
+.kc-cracks path { fill: none; stroke: #fff; stroke-width: 2; stroke-dasharray: 400; stroke-dashoffset: 400; opacity: .9; }
+.v-ability .kc-cracks path { stroke: var(--teal); }
+.kc-shards { position: absolute; inset: 0; pointer-events: none; }
+.kc-shard { position: absolute; inset: 0; opacity: 0; --mul: 1; background: linear-gradient(180deg, rgba(255, 70, 85, .5), rgba(255, 70, 85, .15)); border: 1px solid rgba(255, 120, 130, .7); }
+.kc.streak .kc-shard { --mul: 1.8; }
+.kc-half { position: absolute; inset: 0; border: 2px solid color-mix(in srgb, var(--accent) 80%, #fff); border-radius: 10px; opacity: 0; background: linear-gradient(180deg, rgba(255, 70, 85, .26), rgba(255, 70, 85, .08)); }
+.kc-half.a { clip-path: polygon(0 0, 100% 0, 100% 30%, 0 70%); } .kc-half.b { clip-path: polygon(0 70%, 100% 30%, 100% 100%, 0 100%); }
+.kc-slash { position: absolute; left: -10%; top: 50%; width: 120%; height: 6px; transform: translateY(-50%) rotate(-28deg) scaleX(0); opacity: 0; box-shadow: 0 0 18px #fff; background: linear-gradient(90deg, transparent, #fff, var(--ac, var(--accent)), transparent); }
+.kc-abil { position: absolute; left: 28%; top: 34%; width: 15%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; opacity: 0; --fx: 300px; --fy: 12px; box-shadow: 0 0 28px var(--teal);
+  background: radial-gradient(circle, rgba(15, 25, 35, .92) 0 40%, rgba(30, 230, 210, .75) 52%, rgba(30, 230, 210, .2) 64%, transparent 72%); }
+.kc-abil img { width: 60%; height: 60%; object-fit: contain; }
+.kc-stamp { position: absolute; left: 62%; top: 52%; padding: 4px 14px; border: 3px solid var(--ink); color: var(--ink); font-weight: 900; letter-spacing: .14em; white-space: nowrap; background: rgba(15, 25, 35, .75); opacity: 0;
+  font-size: clamp(14px, 3.2vw, 26px); transform: translate(-50%, -50%) rotate(-10deg) scale(3); }
+.kc-stamp.s-headshot { color: var(--accent); border-color: var(--accent); }
+.kc-stamp.s-ability { color: var(--teal); border-color: var(--teal); letter-spacing: .06em; }
+.kc-stamp.s-melee { color: #fff; border-color: #fff; }
+.kc-badge { position: absolute; right: 3%; bottom: 8%; padding: 5px 12px; border-radius: 8px; background: var(--ac, var(--accent)); color: var(--bg); font-weight: 900; letter-spacing: .05em; transform: skewX(-8deg) scale(.4); opacity: 0; }
+.kc-score { position: absolute; left: 3%; bottom: 7%; padding: 4px 10px; border-radius: 8px; background: rgba(15, 25, 35, .8); border: 1px solid var(--line); font-weight: 800; font-size: .8rem; color: var(--ok); opacity: 0; transform: translateY(8px); }
+
+/* ---- 키프레임(transform·opacity·stroke-dashoffset만) ---- */
+@keyframes kc-life { 0%, 100% { opacity: 1; } }
+@keyframes kc-in-shooter { 0% { opacity: 0; transform: translateX(-80px) scale(1.05); } 60% { opacity: 1; transform: translateX(8px) scale(1); } 100% { opacity: 1; transform: translateX(0); } }
+@keyframes kc-in-band { 0% { opacity: 0; transform: skewX(-16deg) translateX(-30%); } 100% { opacity: 1; transform: skewX(-16deg) translateX(0); } }
+@keyframes kc-in-tag { 0% { opacity: 0; transform: translateX(30px); } 100% { opacity: 1; transform: none; } }
+@keyframes kc-ret-snap { 0% { opacity: 0; transform: translate(-50%, -50%) scale(2.4); } 70% { opacity: 1; transform: translate(-50%, -50%) scale(.95); } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes kc-hot { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+@keyframes kc-flash { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0); } 30% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(2.2); } }
+@keyframes kc-ring { 0% { opacity: 1; transform: translate(-50%, -50%) scale(.2); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(2.6); } }
+@keyframes kc-tracer { 0% { opacity: 1; transform: scaleX(0); } 40% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0; transform: scaleX(1) translateX(40%); } }
+@keyframes kc-crack { to { stroke-dashoffset: 0; } }
+@keyframes kc-panel-out { 0% { opacity: 1; transform: none; } 30% { opacity: 1; transform: translate(3px, -2px); } 100% { opacity: 0; transform: scale(.96); } }
+@keyframes kc-shard { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(calc(var(--dx) * var(--mul)), calc(var(--dy) * var(--mul))) rotate(var(--r)) scale(.7); } }
+@keyframes kc-stamp { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-10deg) scale(3); } 60% { opacity: 1; transform: translate(-50%, -50%) rotate(-10deg) scale(.92); } 100% { opacity: 1; transform: translate(-50%, -50%) rotate(-10deg) scale(1); } }
+@keyframes kc-badge { 0% { opacity: 0; transform: skewX(-8deg) scale(.4); } 60% { opacity: 1; transform: skewX(-8deg) scale(1.25); } 100% { opacity: 1; transform: skewX(-8deg) scale(1); } }
+@keyframes kc-score { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: none; } }
+@keyframes kc-shake { 0%, 100% { transform: none; } 20% { transform: translate(-7px, 3px); } 45% { transform: translate(6px, -3px); } 70% { transform: translate(-3px, 2px); } }
+@keyframes kc-shake-big { 0%, 100% { transform: none; } 15% { transform: translate(-12px, 5px) rotate(-.6deg); } 40% { transform: translate(10px, -5px) rotate(.5deg); } 65% { transform: translate(-6px, 3px); } 85% { transform: translate(3px, -2px); } }
+@keyframes kc-abil-fly { 0% { opacity: 0; transform: translate(0, 0) rotate(0) scale(.6); } 15% { opacity: 1; transform: translate(0, -10px) rotate(20deg) scale(1.1); } 100% { opacity: 1; transform: translate(var(--fx), var(--fy)) rotate(380deg) scale(1); } }
+@keyframes kc-abil-pop { 0% { opacity: 1; transform: translate(var(--fx), var(--fy)) scale(1); } 100% { opacity: 0; transform: translate(var(--fx), var(--fy)) scale(2.4); } }
+@keyframes kc-lunge { 0% { transform: none; } 40% { transform: translateX(70px) skewX(-6deg); } 100% { transform: translateX(24px); } }
+@keyframes kc-slash { 0% { opacity: 0; transform: translateY(-50%) rotate(-28deg) scaleX(0); } 30% { opacity: 1; transform: translateY(-50%) rotate(-28deg) scaleX(1); } 100% { opacity: 0; transform: translateY(-50%) rotate(-28deg) scaleX(1) translateX(20%); } }
+@keyframes kc-half-a { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(-26px, -40px) rotate(-14deg); } }
+@keyframes kc-half-b { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(30px, 46px) rotate(12deg); } }
+
+/* ---- 재생(.fx-kc, fx-done 전): 컨테이너 수명 = 변형 길이 × --kcs ---- */
+.kc.fx-kc.v-headshot:not(.fx-done) { animation: kc-life calc(1.3s * var(--kcs)) linear both; }
+.kc.fx-kc.v-ability:not(.fx-done) { animation: kc-life calc(1.75s * var(--kcs)) linear both; }
+.kc.fx-kc.v-melee:not(.fx-done) { animation: kc-life calc(1.3s * var(--kcs)) linear both; }
+.kc.v-headshot { --hit: .58s; } .kc.v-ability { --hit: .96s; } .kc.v-melee { --hit: .6s; }
+.kc.fx-kc:not(.fx-done) .kc-inner { animation: kc-shake calc(.3s * var(--kcs)) calc(var(--hit) * var(--kcs)) both; }
+.kc.fx-kc.streak:not(.fx-done) .kc-inner { animation-name: kc-shake-big; animation-duration: calc(.5s * var(--kcs)); }
+.kc.fx-kc:not(.fx-done) .kc-shooter { animation: kc-in-shooter calc(.38s * var(--kcs)) cubic-bezier(.2, .9, .3, 1.2) both; }
+.kc.fx-kc:not(.fx-done) .kc-band { animation: kc-in-band calc(.4s * var(--kcs)) ease-out both; }
+.kc.fx-kc:not(.fx-done) .kc-tag { animation: kc-in-tag calc(.3s * var(--kcs)) calc(.1s * var(--kcs)) ease-out both; }
+.kc.fx-kc:not(.fx-done) .kc-score { animation: kc-score calc(.3s * var(--kcs)) calc(.9s * var(--kcs)) ease-out both; }
+.kc.fx-kc.v-ability:not(.fx-done) .kc-score { animation-delay: calc(1.3s * var(--kcs)); }
+.kc.fx-kc:not(.fx-done) .kc-badge { animation: kc-badge calc(.4s * var(--kcs)) calc(var(--hit) * var(--kcs) + .2s) cubic-bezier(.2, .9, .3, 1.3) both; }
+/* 헤드샷 */
+.kc.fx-kc.v-headshot:not(.fx-done) .kc-ret { animation: kc-ret-snap calc(.32s * var(--kcs)) calc(.22s * var(--kcs)) ease-out both; }
+.kc.fx-kc.v-headshot:not(.fx-done) .kc-ret-hot { animation: kc-hot calc(.12s * var(--kcs)) calc(.54s * var(--kcs)) both; }
+.kc.fx-kc.v-headshot:not(.fx-done) .kc-tracer { animation: kc-tracer calc(.22s * var(--kcs)) calc(.5s * var(--kcs)) ease-in both; }
+.kc.fx-kc.v-headshot:not(.fx-done) .kc-tracer.t2 { animation-delay: calc(.56s * var(--kcs)); }
+.kc.fx-kc.v-headshot:not(.fx-done) .kc-flash { animation: kc-flash calc(.35s * var(--kcs)) calc(.56s * var(--kcs)) ease-out both; }
+.kc.fx-kc.v-headshot:not(.fx-done) .kc-cracks path { animation: kc-crack calc(.18s * var(--kcs)) calc(.58s * var(--kcs)) linear both; }
+.kc.fx-kc.v-headshot:not(.fx-done) .kc-panel, .kc.fx-kc.v-headshot:not(.fx-done) .kc-cracks { animation: kc-panel-out calc(.4s * var(--kcs)) calc(.72s * var(--kcs)) ease-in both; }
+.kc.fx-kc.v-headshot:not(.fx-done) .kc-shard { animation: kc-shard calc(.55s * var(--kcs)) calc(.74s * var(--kcs)) cubic-bezier(.2, .6, .4, 1) both; }
+.kc.fx-kc.v-headshot:not(.fx-done) .kc-stamp { animation: kc-stamp calc(.34s * var(--kcs)) calc(.8s * var(--kcs)) cubic-bezier(.2, .9, .3, 1.3) both; }
+/* 능력 마무리 */
+.kc.fx-kc.v-ability:not(.fx-done) .kc-abil { animation: kc-abil-fly calc(.7s * var(--kcs)) calc(.25s * var(--kcs)) cubic-bezier(.4, 0, .7, 1) both, kc-abil-pop calc(.3s * var(--kcs)) calc(.95s * var(--kcs)) ease-out forwards; }
+.kc.fx-kc.v-ability:not(.fx-done) .kc-ring { animation: kc-ring calc(.5s * var(--kcs)) calc(.95s * var(--kcs)) ease-out both; }
+.kc.fx-kc.v-ability:not(.fx-done) .kc-flash { animation: kc-flash calc(.4s * var(--kcs)) calc(.95s * var(--kcs)) ease-out both; }
+.kc.fx-kc.v-ability:not(.fx-done) .kc-cracks path { animation: kc-crack calc(.2s * var(--kcs)) calc(.98s * var(--kcs)) linear both; }
+.kc.fx-kc.v-ability:not(.fx-done) .kc-panel, .kc.fx-kc.v-ability:not(.fx-done) .kc-cracks { animation: kc-panel-out calc(.4s * var(--kcs)) calc(1.1s * var(--kcs)) ease-in both; }
+.kc.fx-kc.v-ability:not(.fx-done) .kc-shard { animation: kc-shard calc(.6s * var(--kcs)) calc(1.12s * var(--kcs)) cubic-bezier(.2, .6, .4, 1) both; }
+.kc.fx-kc.v-ability:not(.fx-done) .kc-stamp { animation: kc-stamp calc(.34s * var(--kcs)) calc(1.16s * var(--kcs)) cubic-bezier(.2, .9, .3, 1.3) both; }
+/* 근접 처치 */
+.kc.fx-kc.v-melee:not(.fx-done) .kc-shooter { animation: kc-in-shooter calc(.3s * var(--kcs)) cubic-bezier(.2, .9, .3, 1.2) both, kc-lunge calc(.42s * var(--kcs)) calc(.34s * var(--kcs)) cubic-bezier(.3, 0, .2, 1) forwards; }
+.kc.fx-kc.v-melee:not(.fx-done) .kc-slash { animation: kc-slash calc(.32s * var(--kcs)) calc(.5s * var(--kcs)) ease-out both; }
+.kc.fx-kc.v-melee:not(.fx-done) .kc-panel { animation: kc-panel-out calc(.01s * var(--kcs)) calc(.62s * var(--kcs)) both; }
+.kc.fx-kc.v-melee:not(.fx-done) .kc-half.a { animation: kc-half-a calc(.5s * var(--kcs)) calc(.62s * var(--kcs)) cubic-bezier(.2, .6, .4, 1) both; }
+.kc.fx-kc.v-melee:not(.fx-done) .kc-half.b { animation: kc-half-b calc(.5s * var(--kcs)) calc(.62s * var(--kcs)) cubic-bezier(.2, .6, .4, 1) both; }
+.kc.fx-kc.v-melee:not(.fx-done) .kc-stamp { animation: kc-stamp calc(.34s * var(--kcs)) calc(.8s * var(--kcs)) cubic-bezier(.2, .9, .3, 1.3) both; }
+
+/* ---- 정적 마지막 장면(.fx-done: 움직임 꺼짐·OS 감소·재생 완료·재렌더링) ---- */
+.kc.fx-done, .kc.fx-done * { animation: none !important; }
+.kc.fx-done .kc-shooter, .kc.fx-done .kc-band, .kc.fx-done .kc-tag, .kc.fx-done .kc-stamp, .kc.fx-done .kc-badge, .kc.fx-done .kc-score { opacity: 1; }
+.kc.fx-done .kc-shooter { transform: none; } .kc.fx-done.v-melee .kc-shooter { transform: translateX(24px); }
+.kc.fx-done .kc-band { transform: skewX(-16deg); } .kc.fx-done .kc-tag { transform: none; } .kc.fx-done .kc-score { transform: none; }
+.kc.fx-done .kc-stamp { transform: translate(-50%, -50%) rotate(-10deg) scale(1); } .kc.fx-done .kc-badge { transform: skewX(-8deg) scale(1); }
+.kc.fx-done .kc-panel, .kc.fx-done .kc-shard, .kc.fx-done .kc-half, .kc.fx-done .kc-cracks, .kc.fx-done .kc-ret, .kc.fx-done .kc-flash, .kc.fx-done .kc-ring, .kc.fx-done .kc-tracer, .kc.fx-done .kc-slash, .kc.fx-done .kc-abil { opacity: 0; }
