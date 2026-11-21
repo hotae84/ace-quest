@@ -1,5 +1,6 @@
 import { h } from '../dom.js';
 import { topbar, agentBadge, fmt } from './common.js';
+import { IMAGE_NOTICE } from '../fx/avatar.js';
 
 // 첫 실행·설정: 토큰(선택) → 플레이어(+PIN) → 요원
 export function renderSetup(app, { first = false } = {}) {
@@ -70,7 +71,7 @@ export function renderSetup(app, { first = false } = {}) {
       queueN ? h('p', { class: 'sub' }, `미전송 기록 ${queueN}건`) : null,
       st.syncError ? h('p', { class: 'error' }, `마지막 전송 실패: ${st.syncError.message || st.syncError}`) : null),
     h('section', { class: 'card' }, playersBox),
-    h('section', { class: 'card' }, h('h2', {}, '요원'), agentsBox),
+    h('section', { class: 'card' }, h('h2', {}, '요원'), agentsBox, h('p', { class: 'sub notice' }, IMAGE_NOTICE)),
     err,
     h('button', { class: 'btn primary block', onclick: save }, first ? '출격 준비 완료' : '저장'),
     !first ? h('section', { class: 'card' },

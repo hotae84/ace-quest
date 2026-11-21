@@ -59,3 +59,30 @@ test('crate: 개봉 상태는 키별로 기억되어 재렌더링 뒤 복원된�
   resetCrates();
   ok(!crateOpened('r1:0'));
 });
+
+// ---- 요원 초상(공식 아이콘 WebP) ----
+import { avatarUrl, IMAGE_NOTICE } from '../js/fx/avatar.js';
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+test('avatarUrl: 요원 id → assets/agents/<id>.webp, 이상한 id는 null(경로 조작 차단)', () => {
+  eq(avatarUrl('jett'), 'assets/agents/jett.webp');
+  eq(avatarUrl('kay-o2'), 'assets/agents/kay-o2.webp');
+  eq([avatarUrl('../x'), avatarUrl('Jett'), avatarUrl(''), avatarUrl(null), avatarUrl('a b')], [null, null, null, null, null]);
+});
+
+test('IMAGE_NOTICE: 라이엇 저작권·비보증 고지 문구', () => {
+  ok(IMAGE_NOTICE.includes('Riot Games') && IMAGE_NOTICE.includes('비상업'));
+});
+
+test('agents.json의 모든 요원에 초상 파일이 있고 sw PRECACHE에 들어 있다', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  const agents = JSON.parse(readFileSync(`${root}data/agents.json`, 'utf8'));
+  const sw = readFileSync(`${root}sw.js`, 'utf8');
+  for (const a of agents) {
+    const p = avatarUrl(a.id);
+    ok(existsSync(`${root}${p}`), `${p} 파일`);
+    ok(sw.includes(`'${p}'`), `${p} 프리캐시`);
+  }
+  ok(agents.length === 8);
+});

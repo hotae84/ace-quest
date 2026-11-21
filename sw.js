@@ -12,8 +12,9 @@ const PRECACHE = [
   'data/zones.json', 'data/agents.json', 'data/versions.json', 'data/cards-z1.json', 'data/cards-z2.json', 'data/cards-z4.json', 'data/cards-z5.json',
   'data/fixed-f1.json', 'data/fixed-f2.json', 'data/fixed-f3.json', 'data/fixed-f4.json',
   'js/fixed.js', 'js/questions/fixed.js',
-  'js/fx/config.js', 'js/fx/motion.js', 'js/fx/rank.js', 'js/fx/once.js', 'js/fx/svg.js', 'js/fx/target.js', 'js/fx/killcut.js', 'js/fx/hit.js', 'js/fx/ace.js', 'js/fx/crate.js', 'js/fx/portrait.js',
+  'js/fx/config.js', 'js/fx/motion.js', 'js/fx/rank.js', 'js/fx/once.js', 'js/fx/svg.js', 'js/fx/target.js', 'js/fx/killcut.js', 'js/fx/hit.js', 'js/fx/ace.js', 'js/fx/crate.js', 'js/fx/portrait.js', 'js/fx/avatar.js',
   'assets/fx/emblem-jett.svg', 'assets/fx/emblem-phoenix.svg', 'assets/fx/emblem-sage.svg', 'assets/fx/killcut-basic.svg', 'assets/fx/target-card.svg',
+  'assets/agents/jett.webp', 'assets/agents/sage.webp', 'assets/agents/phoenix.webp', 'assets/agents/sova.webp', 'assets/agents/reyna.webp', 'assets/agents/killjoy.webp', 'assets/agents/omen.webp', 'assets/agents/cypher.webp',
   'assets/icons/icon-180.png', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png',
 ];
 

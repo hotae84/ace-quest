@@ -5,6 +5,12 @@
 .danger { color: var(--accent); } .ok { color: var(--ok); } .hint { color: var(--hint); }
 .fx-slot:empty { display: none; }
 
+/* ---- 요원 초상(공식 아이콘) ---- */
+img.avatar { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; background: var(--bg); }
+.pt-emblem img.avatar { border-radius: 8px; }
+.ace-emblem img.avatar { border-radius: 50%; border: 4px solid var(--ac, var(--accent)); box-shadow: 0 0 32px color-mix(in srgb, var(--ac, var(--accent)) 60%, transparent); }
+.notice { font-size: .72rem; opacity: .75; margin-top: 10px; }
+
 /* ---- 표적 카드 ---- */
 .target-card { position: relative; width: min(100%, 380px); margin: 0 auto 10px; color: var(--ink); }
 .target-card .tc-svg { display: block; width: 100%; height: auto; }
