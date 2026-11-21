@@ -23,7 +23,7 @@ export function rebuild(node, ancestors = new Set()) {
   const props = {};
   for (const { name, value } of node.attributes) if (allowedAttr(name, value) && !name.startsWith('xmlns')) props[name] = value;
   // 조상(자기 자신 포함)을 가리키는 <use>는 재귀 확장이 되므로 버린다
-  if (node.localName === 'use') { const ref = String(props.href || props['xlink:href'] || '').slice(1); if (ref && ancestors.has(ref)) return null; }
+  if (node.localName === 'use') { const ref = String(props.href || props['xlink:href'] || '').slice(1); if (ref && (ancestors.has(ref) || ref === props.id)) return null; }
   const el = s(node.localName, props);
   const next = props.id ? new Set([...ancestors, props.id]) : ancestors;
   for (const c of node.childNodes) { const r = rebuild(c, next); if (r) el.append(r); }

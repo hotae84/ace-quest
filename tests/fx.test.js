@@ -78,3 +78,6 @@ test('validateSvg: 대소문자 URL()·자기 참조 use 거부', () => {
   const loop = GOOD.replace('</svg>', '<g id="loop"><use href="#loop"/></g></svg>');
   ok(validateSvg(loop).errors.some((e) => e.includes('use')), '자기 참조 use');
 });
+test('validateSvg: 직접 자기 참조 use 거부', () => {
+  ok(validateSvg(GOOD.replace('</svg>', '<use id="loop" href="#loop"/></svg>')).errors.some((e) => e.includes('use')));
+});
