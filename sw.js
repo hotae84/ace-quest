@@ -1,5 +1,5 @@
 // 코드든 카드 JSON이든 바뀌면 APP_VERSION을 올린다
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.2.0';
 const CACHE = `aq-${APP_VERSION}`;
 const PRECACHE = [
   './', 'index.html', 'admin.html', 'replay.html', 'manifest.webmanifest',
