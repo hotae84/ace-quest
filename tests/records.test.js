@@ -25,8 +25,8 @@ test('toLine은 §6.2 키 집합만 담는다', () => {
   const line = toLine(played([true, false, true]));
   eq(Object.keys(line).sort(), ['ace', 'agent', 'creds', 'cv', 'endedAt', 'finished', 'gv', 'id', 'mode', 'player', 'q', 'startedAt', 'streakMax', 'tickets', 'v', 'zone']);
   eq(line.v, 1);
-  eq(Object.keys(line.q[0]).sort(), ['a', 'boost', 'c', 'f', 'hint', 'oh', 'ok', 'qh', 'retry', 's', 'x']);
-  eq(Object.keys(line.q[1].retry).sort(), ['a', 'f', 'hint', 'oh', 'ok', 'qh', 's', 'x']);
+  eq(Object.keys(line.q[0]).sort(), ['a', 'boost', 'c', 'f', 'fq', 'hint', 'oh', 'ok', 'qh', 'retry', 's', 'x']);
+  eq(Object.keys(line.q[1].retry).sort(), ['a', 'f', 'fq', 'hint', 'oh', 'ok', 'qh', 's', 'x']);
   ok(!('idx' in line) && !('streak' in line) && !('boostNext' in line));
 });
 

@@ -15,6 +15,14 @@ export function buildIndex({ zones, cards }) {
   return { contentVersion: zones.contentVersion, zones: zones.zones, cards: map, byZone, all: cards.slice() };
 }
 
+// 지역의 표적 목록 — cards 지역은 카드, fixed 지역은 개념(설계 v2 §3). 지도·보너스 자격·뽑기가 모두 이 함수를 쓴다
+export function targetsOf(zoneId, { index, fixedIndex = null }) {
+  const z = (index.zones || []).find((x) => x.id === zoneId);
+  if (!z) return [];
+  if (z.source === 'fixed') return (fixedIndex?.byZone.get(zoneId) || []).map((c) => ({ id: c.id, kind: 'concept', zone: zoneId, concept: c }));
+  return (index.byZone.get(zoneId) || []).map((c) => ({ id: c.id, kind: 'card', zone: zoneId, card: c }));
+}
+
 export function allowedCards(card, index) {
   return (card.distractors || []).map((id) => index.cards.get(id)).filter((c) => c && !c.retired);
 }

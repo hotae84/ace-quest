@@ -18,7 +18,7 @@ test('RULES 수치(설계 §14)', () => {
 test('newRound는 계획 위에 시도 칸을 만든다', () => {
   const r = fresh();
   eq(r.q.length, 5);
-  eq(r.q[0], { c: 'c0101', x: [], f: 'ox', s: 1, qh: null, oh: null, a: null, ok: null, hint: false, boost: false, retry: null });
+  eq(r.q[0], { c: 'c0101', x: [], f: 'ox', s: 1, fq: null, qh: null, oh: null, a: null, ok: null, hint: false, boost: false, retry: null });
   eq([r.id, r.player, r.agent, r.finished, r.idx, r.streak, r.streakMax, r.boostNext], ['r1', 'p1', 'jett', null, 0, 0, 0, false]);
 });
 
@@ -59,7 +59,7 @@ test('canRetry는 오답이고 아직 재도전 전일 때만', () => {
   ok(!canRetry(answer(fresh(), 0, YES, OX), 0));
   r = startRetry(r, 0, { f: 'ox', s: 2, x: [] });
   ok(!canRetry(r, 0));
-  eq(r.q[0].retry, { f: 'ox', s: 2, x: [], qh: null, oh: null, a: null, ok: null, hint: false, eligible: true });
+  eq(r.q[0].retry, { f: 'ox', s: 2, x: [], fq: null, qh: null, oh: null, a: null, ok: null, hint: false, eligible: true });
 });
 
 test('재도전 성공 → 다음 문제 boost:true, boostNext는 소모된다', () => {

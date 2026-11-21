@@ -6,7 +6,7 @@ export const isLedgerPath = (path) => /^records\/[^/]+\.jsonl$/.test(path);
 
 // 플레이어별 집계와 이상 징후(설계 §6.4). extras는 관리 페이지가 따로 모은 검사 결과
 export async function summarize(players, recordsByPlayer, redemptionsByPlayer = {}, extras = {}) {
-  const { appendChecks = {}, checkpointStatus: cps = {}, quarantine = [], regrades = {} } = extras;
+  const { appendChecks = {}, checkpointStatus: cps = {}, quarantine = [], regrades = {}, concepts = null } = extras;
   const qIds = new Set(quarantine.map((q) => q.id));
   const out = [];
   for (const p of players) {
@@ -17,7 +17,7 @@ export async function summarize(players, recordsByPlayer, redemptionsByPlayer = 
     const anomalies = [];
     if (!chain.ok) anomalies.push({ roundId: lines[chain.breakAt]?.id ?? null, code: 'chain-break' });
     for (const l of lines) {
-      for (const code of checkRules(l)) anomalies.push({ roundId: l.id, code });
+      for (const code of checkRules(l, undefined, { concepts })) anomalies.push({ roundId: l.id, code });
       if (qIds.has(l.id)) anomalies.push({ roundId: l.id, code: 'quarantine' });
       if (regrades[l.id] && regrades[l.id].ok === false) anomalies.push({ roundId: l.id, code: 'regrade' });
     }

@@ -15,7 +15,7 @@ export function newRound(plan, { id, player, agent, startedAt }) {
     mode: plan.mode, zone: plan.zone, cv: plan.cv, gv: plan.gv,
     id, player, agent, startedAt, endedAt: null, finished: null,
     idx: 0, streak: 0, streakMax: 0, boostNext: false,
-    q: plan.q.map((q) => ({ c: q.c, x: q.x, f: q.f, s: q.s, qh: null, oh: null, a: null, ok: null, hint: false, boost: false, retry: null })),
+    q: plan.q.map((q) => ({ c: q.c, x: q.x, f: q.f, s: q.s, fq: q.fq ?? null, qh: null, oh: null, a: null, ok: null, hint: false, boost: false, retry: null })),
   };
 }
 
@@ -41,10 +41,10 @@ export function answer(round, i, a, question) {
 export const canRetry = (round, i) => round.q[i].ok === false && round.q[i].retry === null;
 export const boostEligible = (round, i) => i === 0 || round.q[i - 1].ok === true;
 
-export function startRetry(round, i, { f, s, x }) {
+export function startRetry(round, i, { f, s, x, fq = null }) {
   if (!canRetry(round, i)) return round;
   const r = copy(round);
-  r.q[i].retry = { f, s, x, qh: null, oh: null, a: null, ok: null, hint: false, eligible: boostEligible(round, i) };
+  r.q[i].retry = { f, s, x, fq, qh: null, oh: null, a: null, ok: null, hint: false, eligible: boostEligible(round, i) };
   return r;
 }
 

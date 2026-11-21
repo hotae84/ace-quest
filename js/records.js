@@ -1,14 +1,14 @@
 import { canonical, hashLine } from './hash.js';
 import { RULES, applyAttemptHint } from './game.js';
 
-const attempt = (t) => ({ f: t.f, s: t.s, x: t.x, qh: t.qh, oh: t.oh, a: t.a, ok: t.ok, hint: t.hint });
+const attempt = (t) => ({ f: t.f, s: t.s, x: t.x, fq: t.fq ?? null, qh: t.qh, oh: t.oh, a: t.a, ok: t.ok, hint: t.hint });
 
 // Round → 기록 줄 본문(설계 §6.2). prev·hash는 chain()이 붙인다
 export function toLine(round) {
   return {
     v: 1, id: round.id, player: round.player, agent: round.agent, zone: round.zone, mode: round.mode,
     startedAt: round.startedAt, endedAt: round.endedAt, finished: round.finished, cv: round.cv, gv: round.gv,
-    q: round.q.map((q) => ({ c: q.c, x: q.x, f: q.f, s: q.s, qh: q.qh, oh: q.oh, a: q.a, ok: q.ok, hint: q.hint, boost: q.boost,
+    q: round.q.map((q) => ({ c: q.c, x: q.x, f: q.f, s: q.s, fq: q.fq ?? null, qh: q.qh, oh: q.oh, a: q.a, ok: q.ok, hint: q.hint, boost: q.boost,
       retry: q.retry ? attempt(q.retry) : null })),
     streakMax: round.streakMax, ace: round.ace, tickets: round.tickets, creds: round.creds,
   };
@@ -71,11 +71,14 @@ export function merge(...lists) {
 export function deriveState(lines, redemptions = [], { rules = RULES } = {}) {
   const mastery = new Map();
   const bonusDone = new Map();
+  const seenFq = new Map(); // 고정 문항 노출 횟수(qh가 붙은 시도만, 설계 v2 §3.3)
+  const seeFq = (t) => { if (t && t.f === 'fixed' && t.fq && t.qh) seenFq.set(t.fq, (seenFq.get(t.fq) || 0) + 1); };
   let earned = 0, rounds = 0, hintPts = 0;
   const recentAll = [];
   for (const l of lines) {
     if (l.finished === true) { earned += l.creds; rounds++; if (l.mode === 'bonus') bonusDone.set(l.zone, (bonusDone.get(l.zone) || 0) + 1); }
     for (const q of l.q) {
+      seeFq(q); seeFq(q.retry);
       hintPts = applyAttemptHint(hintPts, q);
       if (q.ok === true) mastery.set(q.c, (mastery.get(q.c) || 0) + 1);
       if (q.retry) {
@@ -88,15 +91,24 @@ export function deriveState(lines, redemptions = [], { rules = RULES } = {}) {
   const redeemed = redemptions.reduce((s, r) => s + (Number(r.creds) || 0), 0);
   const recent = [];
   for (let i = recentAll.length - 1; i >= 0 && recent.length < rules.RECENT; i--) if (!recent.includes(recentAll[i])) recent.push(recentAll[i]);
-  return { earned, redeemed, balance: earned - redeemed, mastery, hintPts, recent, rounds, bonusDone };
+  return { earned, redeemed, balance: earned - redeemed, mastery, hintPts, recent, rounds, bonusDone, seenFq };
 }
 
 // 기록 한 줄이 규칙(§5.4·§5.6)과 맞는지 q에서 재계산(관리 페이지 이상 징후)
-export function checkRules(line, rules = RULES) {
+export function checkRules(line, rules = RULES, { concepts = null } = {}) {
   const errs = [];
   const r = rules[line.mode];
   if (!r) return ['mode-invalid'];
   const push = (e) => { if (!errs.includes(e)) errs.push(e); };
+  // 고정 문항 식별 검사(원 시도·재도전, 이탈 줄 포함): 누락은 색인 없이도, 소속은 색인이 있을 때만
+  const checkFq = (t, c) => {
+    if (!t || t.f !== 'fixed') return;
+    if (!t.fq) { push('fq-invalid'); return; }
+    if (!concepts) { push('fq-unverified'); return; }
+    const concept = concepts.get(c);
+    if (!concept || !concept.questions.some((q) => q.id === t.fq)) push('fq-invalid');
+  };
+  for (const q of line.q || []) { checkFq(q, q.c); checkFq(q.retry, q.c); }
   if (line.finished !== true) {
     if ((line.tickets && line.tickets.length) || line.creds) push('abandoned-tickets');
     return errs;
