@@ -93,3 +93,14 @@ img.avatar { display: block; width: 100%; height: 100%; object-fit: cover; borde
   .killcut #muzzle { opacity: 0; } .killcut #tag { opacity: 1; } .killcut #shards, .killcut #tracer { opacity: 0; }
   .killcut #target { opacity: .35; transform: rotate(-80deg); transform-box: fill-box; transform-origin: center bottom; }
 }
+
+/* ---- 결산 성취 수치(0.3.0 §4.2) ---- */
+.score .score-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 6px 0; }
+.score .score-row.small { color: var(--muted); font-size: .9rem; }
+.score-num { font-size: 1.7rem; font-weight: 900; color: var(--ok); font-variant-numeric: tabular-nums; }
+.score .bar { height: 12px; border-radius: 999px; background: var(--line); overflow: hidden; margin: 8px 0; }
+.score .bar i { display: block; height: 100%; width: 0; background: var(--ok); transition: width .6s ease-out; }
+.score .bar i.nt { transition: none; }
+.exch-ready { display: inline-flex; background: var(--accent); color: #fff; font-weight: 900; margin-top: 6px; }
+.rank-up { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--ac, var(--accent)); background: color-mix(in srgb, var(--ac, var(--accent)) 14%, var(--card)); display: flex; justify-content: space-between; align-items: center; font-weight: 900; }
+@media (prefers-reduced-motion: reduce) { .score .bar i { transition: none; } }

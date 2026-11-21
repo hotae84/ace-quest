@@ -12,7 +12,7 @@ const PRECACHE = [
   'data/zones.json', 'data/agents.json', 'data/versions.json', 'data/cards-z1.json', 'data/cards-z2.json', 'data/cards-z4.json', 'data/cards-z5.json',
   'data/fixed-f1.json', 'data/fixed-f2.json', 'data/fixed-f3.json', 'data/fixed-f4.json',
   'js/fixed.js', 'js/questions/fixed.js',
-  'js/fx/config.js', 'js/fx/motion.js', 'js/fx/rank.js', 'js/fx/once.js', 'js/fx/svg.js', 'js/fx/target.js', 'js/fx/killcut.js', 'js/fx/hit.js', 'js/fx/ace.js', 'js/fx/crate.js', 'js/fx/portrait.js', 'js/fx/avatar.js',
+  'js/fx/config.js', 'js/fx/motion.js', 'js/fx/rank.js', 'js/fx/once.js', 'js/fx/svg.js', 'js/fx/target.js', 'js/fx/killcut.js', 'js/fx/hit.js', 'js/fx/ace.js', 'js/fx/crate.js', 'js/fx/portrait.js', 'js/fx/avatar.js', 'js/fx/score.js',
   'assets/fx/target-card.svg',
   'assets/agents/jett.webp', 'assets/agents/sage.webp', 'assets/agents/phoenix.webp', 'assets/agents/sova.webp', 'assets/agents/reyna.webp', 'assets/agents/killjoy.webp', 'assets/agents/omen.webp', 'assets/agents/cypher.webp',
   'assets/agents/jett-full.webp', 'assets/agents/sage-full.webp', 'assets/agents/phoenix-full.webp', 'assets/agents/sova-full.webp', 'assets/agents/reyna-full.webp', 'assets/agents/killjoy-full.webp', 'assets/agents/omen-full.webp', 'assets/agents/cypher-full.webp',

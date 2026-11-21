@@ -18,3 +18,4 @@ import './app-fixed.test.js';
 import './fx.test.js';
 import './fx-scene.test.js';
 import './killcut.test.js';
+import './score.test.js';

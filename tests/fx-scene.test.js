@@ -107,3 +107,9 @@ test('agents.json: 요원마다 abilities 4개(slot 순서 고정), 전신·능�
   ok(bytes <= 700 * 1024, `전신+능력 합계 ${bytes}B ≤ 700KB`);
   ok(sw.includes("APP_VERSION = '0.3.0'"), 'sw 0.3.0');
 });
+
+test('sw 프리캐시: 0.3.0 신규 모듈·CSS 포함', () => {
+  const sw = readFileSync(fileURLToPath(new URL('../sw.js', import.meta.url)), 'utf8');
+  for (const p of ['js/fx/score.js', 'js/fx/avatar.js', 'js/fx/killcut.js', 'css/killcut.css']) ok(sw.includes(`'${p}'`), `${p} 프리캐시`);
+  ok(!sw.includes('emblem-') && !sw.includes('killcut-basic'), '삭제된 SVG는 프리캐시에 없음');
+});
