@@ -312,7 +312,8 @@ export async function main() {
   const root = document.getElementById('app');
   const fetchJson = async (p) => { const r = await fetch(p, { cache: 'no-cache' }); if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); };
   let app = null;
-  const render = () => { if (app) mount(root, renderView(app)); };
+  const { clearAce } = await import('./fx/ace.js');
+  const render = () => { if (!app) return; if (app.state.view !== 'result') clearAce(document.body); mount(root, renderView(app)); };
   try {
     const zones = await fetchJson('data/zones.json');
     const cards = (await Promise.all(zones.cardFiles.map((f) => fetchJson(`data/${f}`)))).flat();

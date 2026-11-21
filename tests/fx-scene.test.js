@@ -47,3 +47,15 @@ test('crateLabel: 당첨은 +크레드, 아니면 꽝', () => {
   eq(crateLabel({ won: true, size: 1000 }), '+1,000');
   eq(crateLabel({ won: false, size: 1000 }), '꽝');
 });
+
+test('allowedAttr: 대소문자 섞인 URL()·외부 참조도 거부', () => {
+  ok(!allowedAttr('clip-path', 'URL(https://example.invalid/a.svg#x)'));
+  ok(!allowedAttr('fill', 'Url( https://x )'));
+  ok(allowedAttr('clip-path', 'url(#c)'));
+});
+
+test('crate: 개봉 상태는 키별로 기억되어 재렌더링 뒤 복원된다(순수 상태)', async () => {
+  const { crateOpened, resetCrates } = await import('../js/fx/crate.js');
+  resetCrates();
+  ok(!crateOpened('r1:0'));
+});

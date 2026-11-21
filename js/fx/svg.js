@@ -11,19 +11,22 @@ export function allowedAttr(name, value) {
   const v = String(value);
   if (a === 'style' || a.startsWith('on')) return false;
   if ((a === 'href' || a === 'xlink:href') && !v.startsWith('#')) return false;
-  if (/url\(\s*(?!#)/.test(v)) return false;
+  if (/url\(\s*(?!#)/i.test(v)) return false;
   if (COLOR_ATTRS.has(a) && !COLOR_OK.test(v.trim())) return false;
   return true;
 }
 
 // DOM 노드(파서 결과)를 허용 목록으로 걸러 새 SVG 트리로 복제한다
-export function rebuild(node) {
+export function rebuild(node, ancestors = new Set()) {
   if (node.nodeType === 3) return node.textContent.trim() ? document.createTextNode(node.textContent) : null;
   if (node.nodeType !== 1 || !allowedTag(node.localName)) return null;
   const props = {};
   for (const { name, value } of node.attributes) if (allowedAttr(name, value) && !name.startsWith('xmlns')) props[name] = value;
+  // 조상(자기 자신 포함)을 가리키는 <use>는 재귀 확장이 되므로 버린다
+  if (node.localName === 'use') { const ref = String(props.href || props['xlink:href'] || '').slice(1); if (ref && ancestors.has(ref)) return null; }
   const el = s(node.localName, props);
-  for (const c of node.childNodes) { const r = rebuild(c); if (r) el.append(r); }
+  const next = props.id ? new Set([...ancestors, props.id]) : ancestors;
+  for (const c of node.childNodes) { const r = rebuild(c, next); if (r) el.append(r); }
   return el;
 }
 

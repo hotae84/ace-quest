@@ -13,8 +13,8 @@ export function renderResult(app) {
   const kills = r.q.filter((x) => x.ok === true).length;
   const tickets = r.tickets || [];
   const motion = motionEnabled(st.settings);
-  const crates = tickets.map((t, i) => renderCrate(t, i, { motion }));
-  if (r.ace && r.finished && once(`ace:${r.id}`)) showAce(document.body, agent, { motion });
+  const crates = tickets.map((t, i) => renderCrate(t, i, { motion, key: `${r.id}:${i}` }));
+  if (r.ace && r.finished && once(`ace:${r.id}`)) showAce(document.body, agent, { motion, alive: () => st.view === 'result' && st.result?.id === r.id });
   return h('div', { class: 'page result', style: `--ac:${agent.color}` },
     topbar(app, r.finished ? '라운드 결산' : '이탈', { back: null }),
     st.saveError ? h('p', { class: 'error' }, '저장 실패 — 저장 공간을 확인한 뒤 "다시 저장"을 누르세요.') : null,

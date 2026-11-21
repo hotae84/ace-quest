@@ -73,3 +73,8 @@ test('validateSvg: 내부 참조(#id)와 currentColor·클래스·none은 허용
   const ok1 = GOOD.replace('</svg>', '<defs><linearGradient id="g"><stop offset="0" stop-color="currentColor"/></linearGradient></defs><use href="#g"/><rect fill="none" stroke="currentColor"/></svg>');
   eq(validateSvg(ok1).errors, []);
 });
+test('validateSvg: 대소문자 URL()·자기 참조 use 거부', () => {
+  ok(validateSvg(GOOD.replace('fill="currentColor"', 'fill="URL(https://x/p)"')).errors.length > 0, 'URL() 대문자');
+  const loop = GOOD.replace('</svg>', '<g id="loop"><use href="#loop"/></g></svg>');
+  ok(validateSvg(loop).errors.some((e) => e.includes('use')), '자기 참조 use');
+});

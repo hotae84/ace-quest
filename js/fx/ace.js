@@ -3,9 +3,14 @@ import { h } from '../dom.js';
 import { svgNode } from './svg.js';
 import { FX } from './config.js';
 
-export async function showAce(root = document.body, agent, { motion = true, setTimeout: st = globalThis.setTimeout } = {}) {
+export const clearAce = (root = document.body) => { for (const el of root.querySelectorAll('.ace-overlay')) el.remove(); };
+
+// alive(): 엠블럼을 기다리는 동안 화면이 바뀌었으면 띄우지 않는다
+export async function showAce(root = document.body, agent, { motion = true, alive = () => true, setTimeout: st = globalThis.setTimeout } = {}) {
   if (!motion) return;
   const em = await svgNode(`emblem-${agent.id}`);
+  if (!alive()) return;
+  clearAce(root);
   const shards = Array.from({ length: 16 }, (_, i) => h('span', { class: `ace-shard s${i}` }));
   const box = h('div', { class: 'ace-overlay fx-ace', style: `--ac:${agent.color}`, role: 'dialog', 'aria-label': '에이스! 탭해서 건너뛰기' },
     h('div', { class: 'ace-shards' }, shards),

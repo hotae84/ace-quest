@@ -24,9 +24,10 @@ async function loadContent() {
   if (index) return;
   const zones = await (await fetch('data/zones.json')).json();
   const cards = (await Promise.all(zones.cardFiles.map((f) => fetch(`data/${f}`).then((r) => r.json())))).flat();
-  index = buildIndex({ zones, cards });
   const fixedFiles = await Promise.all(zones.zones.filter((z) => z.source === 'fixed' && z.file).map((z) => fetch(`data/${z.file}`).then((r) => r.json())));
-  fixedIndex = buildFixedIndex(fixedFiles);
+  const fx = buildFixedIndex(fixedFiles);
+  index = buildIndex({ zones, cards });
+  fixedIndex = fx;
 }
 let rawText = {};
 let checksStatus = {};
