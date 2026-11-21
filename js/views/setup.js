@@ -79,5 +79,9 @@ export function renderSetup(app, { first = false } = {}) {
       st.broken.length ? h('p', { class: 'error' }, `깨진 저장 항목: ${st.broken.join(', ')}`) : null,
       st.quarantine.length ? h('p', { class: 'error' }, `격리된 기록 ${st.quarantine.length}건 — 보호자 페이지에서 확인`) : null,
       st.pendingUpdate ? h('button', { class: 'btn block', onclick: () => app.applyUpdate?.() }, '새 버전 적용') : null,
-      h('p', { class: 'sub' }, `누적 크레드 ${fmt(st.derived?.earned)} · 환전 ${fmt(st.derived?.redeemed)}`)) : null);
+      h('p', { class: 'sub' }, `누적 크레드 ${fmt(st.derived?.earned)} · 환전 ${fmt(st.derived?.redeemed)}`)) : null,
+    !first ? h('section', { class: 'card' },
+      h('h2', {}, '표시'),
+      h('label', { class: 'row' }, h('input', { type: 'checkbox', checked: s.motion !== false, onchange: (e) => app.saveSettings({ motion: e.target.checked }) }), ' 움직임(연출) 켜기'),
+      h('label', { class: 'row' }, h('input', { type: 'checkbox', checked: Boolean(s.showArchive), onchange: (e) => app.saveSettings({ showArchive: e.target.checked }) }), ' 이전 퀘스트 범위 보기')) : null);
 }

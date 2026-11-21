@@ -5,7 +5,8 @@ const inSandbox = typeof window !== 'undefined' && window.parent !== window && s
 function say(text) { const el = document.getElementById('msg'); if (el) el.textContent = text; }
 
 const validReq = (m) => m && typeof m === 'object' && typeof m.id === 'string' && typeof m.cv === 'string' && typeof m.gv === 'string'
-  && typeof m.c === 'string' && Array.isArray(m.x) && typeof m.f === 'string' && Number.isInteger(m.s) && Array.isArray(m.a);
+  && typeof m.c === 'string' && Array.isArray(m.x) && typeof m.f === 'string' && Number.isInteger(m.s) && Array.isArray(m.a)
+  && (m.fq === undefined || m.fq === null || typeof m.fq === 'string');
 
 const cache = new Map();
 async function loadBundle({ cv, gv, contentSha, generatorSha }) {
@@ -23,17 +24,29 @@ async function loadBundle({ cv, gv, contentSha, generatorSha }) {
   const zones = await (await fetch(`${dataBase}zones.json`)).json();
   const cards = new Map();
   for (const f of zones.cardFiles) for (const c of await (await fetch(`${dataBase}${f}`)).json()) cards.set(c.id, c);
-  const bundle = { gen, cards };
+  // 그 콘텐츠 버전에 고정 문제 파일이 있을 때만 읽는다(구버전 호환)
+  const fixed = new Map();
+  for (const z of zones.zones.filter((z) => z.source === 'fixed' && z.file)) {
+    try { const f = await (await fetch(`${dataBase}${z.file}`)).json(); for (const c of f.concepts) for (const q of c.questions) fixed.set(q.id, q); } catch { /* 없음 */ }
+  }
+  const bundle = { gen, cards, fixed };
   cache.set(key, bundle);
   return bundle;
 }
 
 export async function replay(m) {
-  const { gen, cards } = await loadBundle(m);
-  const card = cards.get(m.c);
-  const helpers = m.x.map((id) => cards.get(id));
-  if (!card || helpers.some((h) => !h)) throw new Error('unavailable');
-  const q = gen.generate({ card, helpers, form: m.f, seed: m.s });
+  const { gen, cards, fixed } = await loadBundle(m);
+  let q;
+  if (m.f === 'fixed') {
+    const fx = fixed.get(m.fq);
+    if (!fx) throw new Error('unavailable');
+    q = gen.generate({ form: 'fixed', fixed: fx, seed: m.s });
+  } else {
+    const card = cards.get(m.c);
+    const helpers = m.x.map((id) => cards.get(id));
+    if (!card || helpers.some((h) => !h)) throw new Error('unavailable');
+    q = gen.generate({ card, helpers, form: m.f, seed: m.s });
+  }
   const [qh, oh] = await Promise.all([gen.questionHash(q), gen.optionHashes(q)]);
   return { id: m.id, qh, oh, ok: gen.grade(q, m.a), text: q.text, options: gen.displayedTexts(q), answer: gen.canonicalAnswer(q),
     passage: q.passage ?? null, statements: q.statements ?? null, pairs: q.pairs ? q.pairs.map((p) => p[0]) : null };

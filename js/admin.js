@@ -4,6 +4,7 @@ import { ScoresRepo } from './github.js';
 import { parseJsonl, merge } from './records.js';
 import { summarize, acceptReply, checkpointFor, checkpointStatus, isLedgerPath, redemptionLine, appendRedemption, TEST_PLAYER } from './admin-core.js';
 import { buildIndex, pickHelpers } from './content.js';
+import { buildFixedIndex } from './fixed.js';
 import { makeRng } from './rng.js';
 import { generate, questionHash, GENERATOR_VERSION } from './questions/index.js';
 import { fmt } from './views/common.js';
@@ -18,6 +19,15 @@ let repo = null;
 let versions = null;
 let summary = null;
 let index = null;
+let fixedIndex = null;
+async function loadContent() {
+  if (index) return;
+  const zones = await (await fetch('data/zones.json')).json();
+  const cards = (await Promise.all(zones.cardFiles.map((f) => fetch(`data/${f}`).then((r) => r.json())))).flat();
+  index = buildIndex({ zones, cards });
+  const fixedFiles = await Promise.all(zones.zones.filter((z) => z.source === 'fixed' && z.file).map((z) => fetch(`data/${z.file}`).then((r) => r.json())));
+  fixedIndex = buildFixedIndex(fixedFiles);
+}
 let rawText = {};
 let checksStatus = {};
 let busy = false;
@@ -30,7 +40,9 @@ const pendingRedeem = {};
 let checkFailures = {};
 
 // ---- 재현 샌드박스 ----
-const iframe = h('iframe', { title: '재현기', sandbox: 'allow-scripts', src: 'replay.html' });
+// 재현기 iframe은 화면 트리 밖(body)에 한 번만 둔다 — 재렌더링으로 노드가 옮겨지면 iframe이 다시 로드되어 진행 중인 재현이 사라진다
+const iframe = h('iframe', { title: '재현기', sandbox: 'allow-scripts', src: 'replay.html', class: 'replay-frame' });
+document.body.appendChild(iframe);
 const pending = new Map();
 window.addEventListener('message', (e) => {
   if (!acceptReply(e, iframe.contentWindow, new Set(pending.keys()))) return;
@@ -58,6 +70,7 @@ async function loadAll() {
   busy = true; lastError = ''; render();
   try {
     const s = store.getSettings();
+    try { await loadContent(); } catch { /* 콘텐츠를 못 읽으면 fq 소속 검사는 미검증으로 표시 */ }
     repo = new ScoresRepo({ owner: s.owner, repo: s.repo, token });
     const players = await repo.readPlayers();
     const recordsByPlayer = {}, redemptionsByPlayer = {}, appendChecks = {}, cps = {};
@@ -82,7 +95,7 @@ async function loadAll() {
     }
     checksStatus = cps;
     lastInputs = { players, recordsByPlayer, redemptionsByPlayer, appendChecks, cps };
-    summary = await summarize(players, recordsByPlayer, redemptionsByPlayer, { appendChecks, checkpointStatus: cps, quarantine: store.getQuarantine(), regrades });
+    summary = await summarize(players, recordsByPlayer, redemptionsByPlayer, { appendChecks, checkpointStatus: cps, quarantine: store.getQuarantine(), regrades, concepts: fixedIndex?.concepts || null });
   } catch (e) {
     lastError = `불러오기 실패: ${e.message}`;
   } finally { busy = false; render(); }
@@ -132,7 +145,7 @@ function compareAttempt(res, t, label) {
 async function replayRound(line, q, out, key) {
   out.textContent = '재현 중…';
   const v = versions || {};
-  const attempt = (t) => ({ cv: line.cv, gv: line.gv, c: q.c, x: t.x, f: t.f, s: t.s, a: t.a || [],
+  const attempt = (t) => ({ cv: line.cv, gv: line.gv, c: q.c, x: t.x, f: t.f, s: t.s, fq: t.fq ?? null, a: t.a || [],
     contentSha: v.content?.[line.cv] ?? null, generatorSha: v.generator?.[line.gv] ?? null });
   const first = compareAttempt(await askReplay(attempt(q)), q, '');
   const lines = [...first.lines];
@@ -149,7 +162,7 @@ async function replayRound(line, q, out, key) {
   regrades[line.id] = { ok: !(bad || (prev && prev.ok === false)) };
   if (lastInputs) {
     summary = await summarize(lastInputs.players, lastInputs.recordsByPlayer, lastInputs.redemptionsByPlayer,
-      { appendChecks: lastInputs.appendChecks, checkpointStatus: lastInputs.cps, quarantine: store.getQuarantine(), regrades });
+      { appendChecks: lastInputs.appendChecks, checkpointStatus: lastInputs.cps, quarantine: store.getQuarantine(), regrades, concepts: fixedIndex?.concepts || null });
     render();
   }
 }
@@ -158,11 +171,7 @@ async function replayRound(line, q, out, key) {
 async function replaySelfTest(out) {
   out.textContent = '재현 테스트 중…';
   try {
-    if (!index) {
-      const zones = await (await fetch('data/zones.json')).json();
-      const cards = (await Promise.all(zones.cardFiles.map((f) => fetch(`data/${f}`).then((r) => r.json())))).flat();
-      index = buildIndex({ zones, cards });
-    }
+    await loadContent();
     const card = index.all[0];
     const x = pickHelpers({ card, form: 'mcq-data', index, rng: makeRng(1) }) || [];
     const q = generate({ card, helpers: x.map((id) => index.cards.get(id)), form: 'mcq-data', seed: 1 });
@@ -183,7 +192,7 @@ function roundRow(p, line) {
       const key = `${line.id}:${i}`;
       const out = h('div', { class: 'replay-out' }, replayOut[key] || '');
       return h('div', { class: 'q-row' },
-        h('div', {}, `${i + 1}. ${q.c} · ${q.f} · ${q.ok === null ? '미응답' : q.ok ? '정답' : '오답'}${q.hint ? ' · 힌트' : ''}${q.boost ? ' · 부스트' : ''}`,
+        h('div', {}, `${i + 1}. ${q.c}${q.fq ? ` (${q.fq})` : ''} · ${q.f} · ${q.ok === null ? '미응답' : q.ok ? '정답' : '오답'}${q.hint ? ' · 힌트' : ''}${q.boost ? ' · 부스트' : ''}`,
           q.retry ? ` → 재도전 ${q.retry.f} · ${q.retry.ok === null ? '미응답' : q.retry.ok ? '정답' : '오답'}${q.retry.hint ? ' · 힌트' : ''}` : ''),
         h('button', { class: 'btn small', onclick: () => replayRound(line, q, out, key) }, '재현'),
         out);
@@ -232,8 +241,7 @@ function render() {
           h('td', {}, p.nick), h('td', {}, fmt(p.earned)), h('td', {}, fmt(p.redeemed)), h('td', {}, fmt(p.balance)),
           h('td', { class: p.chain.ok ? 'ok' : 'bad' }, p.chain.ok ? '정상' : '깨짐'), h('td', {}, String(p.anomalies.length)))))),
       h('p', { class: 'sub' }, `합계(테스트 제외): 누적 ${fmt(summary.totals.earned)} · 환전 ${fmt(summary.totals.redeemed)} · 잔액 ${fmt(summary.totals.balance)}`)) : null,
-    summary ? summary.players.map(playerSection) : null,
-    iframe);
+    summary ? summary.players.map(playerSection) : null);
   mount(root, view);
 }
 

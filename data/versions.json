@@ -1,12 +1,14 @@
 {
  "current": {
-  "cv": "2026-10-21.4",
-  "gv": "1"
+  "cv": "2026-11-21.1",
+  "gv": "2"
  },
  "content": {
-  "2026-10-21.4": "ef5aad8fb6223da3533b475efd844dcff167f39d"
+  "2026-10-21.4": "ef5aad8fb6223da3533b475efd844dcff167f39d",
+  "2026-11-21.1": null
  },
  "generator": {
-  "1": "ef5aad8fb6223da3533b475efd844dcff167f39d"
+  "1": "ef5aad8fb6223da3533b475efd844dcff167f39d",
+  "2": null
  }
 }

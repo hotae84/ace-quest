@@ -10,6 +10,8 @@ const PRECACHE = [
   'js/questions/render/choice.js', 'js/questions/render/ox.js', 'js/questions/render/order.js', 'js/questions/render/match.js',
   'js/views/index.js', 'js/views/common.js', 'js/views/setup.js', 'js/views/map.js', 'js/views/battle.js', 'js/views/verdict.js', 'js/views/result.js',
   'data/zones.json', 'data/agents.json', 'data/versions.json', 'data/cards-z1.json',
+  'data/fixed-f1.json', 'data/fixed-f2.json', 'data/fixed-f3.json', 'data/fixed-f4.json',
+  'js/fixed.js', 'js/questions/fixed.js',
   'assets/icons/icon-180.png', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png',
 ];
 

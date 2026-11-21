@@ -15,7 +15,7 @@ test('KEYS', () => eq(KEYS, { settings: 'aq.settings', queue: 'aq.queue', cache:
 
 test('기본값', () => {
   const s = new Store(fakeStorage());
-  eq(s.getSettings(), { token: null, owner: 'hotae84', repo: 'ace-quest-scores', playerId: null, nick: null, agent: null, remember: false, syncedPlayers: [] });
+  eq(s.getSettings(), { token: null, owner: 'hotae84', repo: 'ace-quest-scores', playerId: null, nick: null, agent: null, remember: false, syncedPlayers: [], motion: true, showArchive: false });
   eq(s.getQueue(), []);
   eq(s.getCache(), { player: null, lines: [], redemptions: [], fetchedAt: null });
   eq(s.getRound(), null);

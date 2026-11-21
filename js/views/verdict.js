@@ -5,7 +5,7 @@ import { renderOx } from '../questions/render/ox.js';
 import { renderOrder } from '../questions/render/order.js';
 import { renderMatch } from '../questions/render/match.js';
 
-const RENDER = { 'mcq-data': renderChoice, 'mcq-combo': renderChoice, 'mcq-sent': renderChoice, 'mcq-neg': renderChoice, blank: renderChoice, ox: renderOx, order: renderOrder, match: renderMatch };
+const RENDER = { 'mcq-data': renderChoice, 'mcq-combo': renderChoice, 'mcq-sent': renderChoice, 'mcq-neg': renderChoice, 'mcq-fixed': renderChoice, blank: renderChoice, ox: renderOx, order: renderOrder, match: renderMatch };
 
 export function renderVerdict(app) {
   const st = app.state;
@@ -13,7 +13,7 @@ export function renderVerdict(app) {
   const main = r.q[r.idx];
   const slot = st.inRetry ? main.retry : main;
   const q = st.inRetry ? st.retryQuestion : st.question;
-  const card = st.index.cards.get(main.c);
+  const target = app.currentTarget();
   const agent = agentOf(app, r.agent);
   const ok = slot.ok === true;
   const last = r.idx === r.q.length - 1;
@@ -21,7 +21,7 @@ export function renderVerdict(app) {
   return h('div', { class: `page verdict ${ok ? 'ok' : 'no'}`, style: `--ac:${agent.color}` },
     topbar(app, ok ? '클리어' : '피격', { back: null }),
     h('div', { class: 'verdict-banner' },
-      h('strong', {}, ok ? `${agent.name} — ${card.subject} 클리어` : `${card.subject}에 피격`),
+      h('strong', {}, ok ? `${agent.name} — ${target.name} 클리어` : `${target.name}에 피격`),
       r.streak >= 2 && ok ? h('span', { class: 'chip streak' }, `${r.streak}연속`) : null),
     h('main', { class: 'q-area' },
       h('p', { class: 'q-text' }, q.text),

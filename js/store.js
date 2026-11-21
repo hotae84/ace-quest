@@ -1,6 +1,6 @@
 export const KEYS = { settings: 'aq.settings', queue: 'aq.queue', cache: 'aq.cache', round: 'aq.round', quarantine: 'aq.quarantine', adminChecks: 'aq.admin.checks' };
 
-const DEFAULT_SETTINGS = () => ({ token: null, owner: 'hotae84', repo: 'ace-quest-scores', playerId: null, nick: null, agent: null, remember: false, syncedPlayers: [] });
+const DEFAULT_SETTINGS = () => ({ token: null, owner: 'hotae84', repo: 'ace-quest-scores', playerId: null, nick: null, agent: null, remember: false, syncedPlayers: [], motion: true, showArchive: false });
 const DEFAULT_CACHE = () => ({ player: null, lines: [], redemptions: [], fetchedAt: null });
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 

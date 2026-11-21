@@ -7,6 +7,6 @@
 .admin .q-row { padding: 8px 0; border-top: 1px solid var(--line); font-size: .9rem; }
 .admin .replay-out { margin-top: 6px; padding: 8px 10px; background: var(--bg); border-radius: 10px; white-space: pre-wrap; }
 .admin .anom { color: var(--no); }
-.admin iframe { width: 0; height: 0; border: 0; position: absolute; }
+iframe.replay-frame { width: 0; height: 0; border: 0; position: absolute; left: -9999px; }
 .admin form.redeem { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
 .admin form.redeem .full { grid-column: 1 / -1; }

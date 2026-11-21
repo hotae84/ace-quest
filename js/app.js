@@ -1,6 +1,7 @@
-import { buildIndex } from './content.js';
+import { buildIndex, targetsOf } from './content.js';
+import { buildFixedIndex } from './fixed.js';
 import { makeRng, randomSeed, cryptoRng } from './rng.js';
-import { drawRound, drawRetry } from './draw.js';
+import { drawRound, drawRetry, seenInRound } from './draw.js';
 import { generate, questionHash, optionHashes, GENERATOR_VERSION } from './questions/index.js';
 import * as G from './game.js';
 import { bonusOpen } from './game.js';
@@ -9,12 +10,12 @@ import { ScoresRepo, syncQueue } from './github.js';
 import { Store } from './store.js';
 
 // 화면과 무관한 앱 상태 기계. main()만 DOM에 붙는다(테스트는 createApp만 쓴다)
-export function createApp({ index, store, repo = null, agents = [], ticketRng = cryptoRng(), seed = randomSeed,
+export function createApp({ index, fixedIndex = null, store, repo = null, agents = [], ticketRng = cryptoRng(), seed = randomSeed,
   now = () => new Date().toISOString(), isOnline = () => (typeof navigator === 'undefined' ? true : navigator.onLine !== false),
   onChange = () => {}, uuid = () => globalThis.crypto.randomUUID() }) {
   const state = {
-    index, agents, settings: store.getSettings(), cache: store.getCache(), queue: store.getQueue(), quarantine: store.getQuarantine(),
-    derived: null, round: null, question: null, retryQuestion: null, inRetry: false, view: 'map', pendingUpdate: false,
+    index, fixedIndex, agents, settings: store.getSettings(), cache: store.getCache(), queue: store.getQueue(), quarantine: store.getQuarantine(),
+    derived: null, round: null, question: null, retryQuestion: null, inRetry: false, retrySame: false, view: 'map', pendingUpdate: false,
     broken: store.broken, players: null, exchange: null, saveError: null, result: null, syncing: false, syncError: null, lastSync: null,
   };
   let scores = repo;
@@ -24,6 +25,28 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
   let transitioning = false; // 출격·재도전·다음 전환의 공통 잠금
   const card = (id) => index.cards.get(id);
   const changed = () => onChange(state);
+  const fixedQ = (fq) => fixedIndex?.questionById.get(fq)?.question;
+  const conceptOf = (id) => fixedIndex?.concepts.get(id);
+
+  // 현재 문항의 표적(카드 또는 개념) — 화면의 상황·힌트·표적 이름에 쓴다
+  function currentTarget() {
+    const r = state.round;
+    if (!r) return null;
+    const slot = r.q[r.idx];
+    if (slot.f === 'fixed') {
+      const c = conceptOf(slot.c);
+      return { kind: 'concept', id: c.id, name: c.name, hint: `이 문제의 주제: ${c.name}`, scene: null, ref: c.ref };
+    }
+    const k = card(slot.c);
+    return { kind: 'card', id: k.id, name: k.subject, hint: k.hint, scene: k.scene, ref: k.ref };
+  }
+
+  // 지금까지 본 고정 문항 = 확정 기록(seenFq) + 진행 중 라운드의 노출분
+  function seenNow() {
+    const m = new Map(state.derived?.seenFq || []);
+    for (const [k, v] of seenInRound(state.round)) m.set(k, (m.get(k) || 0) + v);
+    return m;
+  }
 
   function recompute() {
     state.cache = store.getCache();
@@ -49,7 +72,9 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     const i = r.idx;
     const main = r.q[i];
     const slot = retry ? main.retry : main;
-    const q = generate({ card: card(main.c), helpers: slot.x.map(card), form: slot.f, seed: slot.s });
+    const q = slot.f === 'fixed'
+      ? generate({ form: 'fixed', fixed: fixedQ(slot.fq), seed: slot.s })
+      : generate({ card: card(main.c), helpers: slot.x.map(card), form: slot.f, seed: slot.s });
     if (!slot.qh) {
       const [qh, oh] = await Promise.all([questionHash(q), optionHashes(q)]);
       const cur = state.round;
@@ -108,7 +133,7 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
   // 보너스 작전 자격(§5.6)은 시작 시점의 최신 숙련도·완주 수로 판정한다
   function bonusAvailable(zone) {
     if (!zone || !state.derived) return false;
-    return bonusOpen(index.byZone.get(zone) || [], state.derived.mastery, state.derived.bonusDone.get(zone) || 0).open;
+    return bonusOpen(targetsOf(zone, { index, fixedIndex }), state.derived.mastery, state.derived.bonusDone.get(zone) || 0).open;
   }
 
   async function startRound(zone, mode = 'normal') {
@@ -119,10 +144,11 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
       if (state.round && state.round.finished === null) settle(G.abandonRound(state.round, { endedAt: now() }), 'map');
       if (state.round) return false; // 저장 실패로 남은 확정 라운드가 있으면 새로 시작하지 않는다
       const { cv, gv } = version();
-      const plan = drawRound({ index, zone, mode, mastery: state.derived.mastery, recent: state.derived.recent, rng: makeRng(seed()), cv, gv });
+      const plan = drawRound({ index, fixedIndex, zone, mode, mastery: state.derived.mastery, recent: state.derived.recent, seen: seenNow(), rng: makeRng(seed()), cv, gv });
       if (!plan.q.length) return false;
       state.round = G.newRound(plan, { id: uuid(), player: state.settings.playerId, agent: state.settings.agent, startedAt: now() });
       state.result = null;
+      state.retrySame = false;
       await prepare(false);
       state.view = 'battle';
       changed();
@@ -145,8 +171,11 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     try {
       const i = state.round.idx;
       const slot = state.round.q[i];
-      const r = drawRetry({ card: card(slot.c), index, prev: state.question, prevPlan: slot, rng: makeRng(seed()) });
-      state.round = G.startRetry(state.round, i, { f: r.f, s: r.s, x: r.x });
+      const r = slot.f === 'fixed'
+        ? drawRetry({ concept: conceptOf(slot.c), fixedIndex, index, prev: state.question, prevPlan: slot, seen: seenNow(), rng: makeRng(seed()) })
+        : drawRetry({ card: card(slot.c), index, prev: state.question, prevPlan: slot, rng: makeRng(seed()) });
+      state.retrySame = Boolean(r.same);
+      state.round = G.startRetry(state.round, i, { f: r.f, s: r.s, x: r.x, fq: r.fq ?? null });
       await prepare(true);
       state.view = 'battle';
       changed();
@@ -171,6 +200,7 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
     try {
       if (r.idx < r.q.length - 1) {
         state.round = { ...r, idx: r.idx + 1 };
+        state.retrySame = false;
         await prepare(false);
         if (state.round && state.round.id === r.id) { state.view = 'battle'; changed(); }
       } else await finish();
@@ -269,7 +299,7 @@ export function createApp({ index, store, repo = null, agents = [], ticketRng = 
 
   function setRepo(r) { scores = r; }
 
-  return { state, boot, startRound, bonusAvailable, resume, setRepo, submit, offerRetry, startRetry, submitRetry, next, hint, hintBalance, finish, abandon, saveSettings, loadPlayers, sync, go, version,
+  return { state, boot, startRound, bonusAvailable, resume, setRepo, currentTarget, seenNow, submit, offerRetry, startRetry, submitRetry, next, hint, hintBalance, finish, abandon, saveSettings, loadPlayers, sync, go, version,
     get repo() { return scores; } };
 }
 
@@ -285,10 +315,12 @@ export async function main() {
   try {
     const zones = await fetchJson('data/zones.json');
     const cards = (await Promise.all(zones.cardFiles.map((f) => fetchJson(`data/${f}`)))).flat();
+    const fixedFiles = await Promise.all(zones.zones.filter((z) => z.source === 'fixed' && z.file).map((z) => fetchJson(`data/${z.file}`)));
     const agents = await fetchJson('data/agents.json');
     const index = buildIndex({ zones, cards });
+    const fixedIndex = buildFixedIndex(fixedFiles);
     const store = new Store(localStorage);
-    app = createApp({ index, store, agents, onChange: render });
+    app = createApp({ index, fixedIndex, store, agents, onChange: render });
     globalThis.aceQuest = app; // 디버깅·자동 확인용
     app.toast = toast;
     app.applyUpdate = () => applyUpdate(app, store);

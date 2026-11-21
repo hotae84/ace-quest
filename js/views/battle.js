@@ -6,7 +6,7 @@ import { renderOx } from '../questions/render/ox.js';
 import { renderOrder } from '../questions/render/order.js';
 import { renderMatch } from '../questions/render/match.js';
 
-const RENDER = { 'mcq-data': renderChoice, 'mcq-combo': renderChoice, 'mcq-sent': renderChoice, 'mcq-neg': renderChoice, blank: renderChoice, ox: renderOx, order: renderOrder, match: renderMatch };
+const RENDER = { 'mcq-data': renderChoice, 'mcq-combo': renderChoice, 'mcq-sent': renderChoice, 'mcq-neg': renderChoice, 'mcq-fixed': renderChoice, blank: renderChoice, ox: renderOx, order: renderOrder, match: renderMatch };
 const NEG = /(옳지 않은|아닌|틀린)/;
 const STREAK = { 2: '더블 킬', 3: '트리플 킬', 4: '쿼드라 킬' };
 const L = ['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'];
@@ -36,7 +36,7 @@ export function renderBattle(app) {
   const r = st.round;
   const q = st.inRetry ? st.retryQuestion : st.question;
   const slot = st.inRetry ? r.q[r.idx].retry : r.q[r.idx];
-  const card = st.index.cards.get(r.q[r.idx].c);
+  const target = app.currentTarget();
   const agent = agentOf(app, r.agent);
   const n = r.q.length;
   const kills = r.q.filter((x) => x.ok === true).length;
@@ -53,9 +53,9 @@ export function renderBattle(app) {
   confirm.onclick = () => { if (draftReady(q, draft)) (st.inRetry ? app.submitRetry : app.submit)(toAnswer(q, draft)); };
   const hintBox = h('div', { class: 'hint-box' });
   const hintBtn = h('button', { class: 'btn ghost small', disabled: slot.hint || balance < RULES.HINT_COST,
-    onclick: () => { const res = app.hint(); if (res.ok) { hintBox.replaceChildren(h('p', { class: 'hint-text' }, `💡 ${card.hint}`)); hintBtn.disabled = true; } else app.toast?.(res.reason === 'insufficient' ? '힌트 포인트가 모자라요' : '지금은 쓸 수 없어요'); } },
+    onclick: () => { const res = app.hint(); if (res.ok) { hintBox.replaceChildren(h('p', { class: 'hint-text' }, `💡 ${target.hint}`)); hintBtn.disabled = true; } else app.toast?.(res.reason === 'insufficient' ? '힌트 포인트가 모자라요' : '지금은 쓸 수 없어요'); } },
     `💡 힌트 ${RULES.HINT_COST} (남은 포인트 ${balance})`);
-  if (slot.hint) hintBox.replaceChildren(h('p', { class: 'hint-text' }, `💡 ${card.hint}`));
+  if (slot.hint) hintBox.replaceChildren(h('p', { class: 'hint-text' }, `💡 ${target.hint}`));
   body = RENDER[q.form](q, { draft, setDraft, done: false, chosen: null });
 
   return h('div', { class: 'page battle', style: `--ac:${agent.color}` },
@@ -66,9 +66,9 @@ export function renderBattle(app) {
     h('div', { class: 'feed' },
       h('span', { class: 'kills' }, `킬 ${kills}`),
       r.streak >= 2 ? h('span', { class: 'chip streak' }, STREAK[r.streak] || `${r.streak}연속`) : null,
-      st.inRetry ? h('span', { class: 'chip retry' }, '재도전') : null),
+      st.inRetry ? h('span', { class: 'chip retry' }, st.retrySame ? '재도전 · 같은 문제, 보기 순서만 달라요' : '재도전') : null),
     h('main', { class: 'q-area' },
-      h('p', { class: 'scene' }, sceneText(card.scene, agent)),
+      h('p', { class: 'scene' }, target.scene ? sceneText(target.scene, agent) : `표적: ${target.name}`),
       passageBox(q),
       h('p', { class: 'q-text' }, questionText(q.text)),
       body,
