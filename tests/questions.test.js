@@ -15,7 +15,7 @@ function make(cardId, form, seed) {
 const SIZE = { 'mcq-data': 4, 'mcq-combo': 4, 'mcq-sent': 4, 'mcq-neg': 4, ox: 2, blank: 4, order: 4, match: 3 };
 const texts = (q) => (q.form === 'order' ? q.items : q.form === 'match' ? q.pairs.map((p) => p[1]) : q.options.map((o) => o.text));
 
-test('GENERATOR_VERSION은 "1"', () => eq(GENERATOR_VERSION, '1'));
+test('GENERATOR_VERSION은 "2"(고정 문제 form 추가)', () => eq(GENERATOR_VERSION, '2'));
 
 for (const form of FORMS) {
   test(`${form}: 같은 입력이면 같은 문제`, () => {

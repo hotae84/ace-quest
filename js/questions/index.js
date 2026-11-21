@@ -5,15 +5,20 @@ import { genOx } from './ox.js';
 import { genBlank } from './blank.js';
 import { genOrder } from './order.js';
 import { genMatch } from './match.js';
+import { genFixed } from './fixed.js';
 
 // 생성 결과가 달라지는 변경마다 올린다(설계 §4.2)
-export const GENERATOR_VERSION = '1';
+export const GENERATOR_VERSION = '2'; // 2: 고정 문제(fixed) form 추가
+
+// 선다형으로 집계하는 form(설계 v2 §3.3: blank도 선다형)
+export const isMcqForm = (f) => f === 'mcq-data' || f === 'mcq-combo' || f === 'mcq-sent' || f === 'mcq-neg' || f === 'mcq-fixed' || f === 'blank';
 
 const GEN = { 'mcq-data': genMcqData, 'mcq-sent': genMcqSent, 'mcq-neg': genMcqNeg, 'mcq-combo': genMcqCombo,
   ox: genOx, blank: genBlank, order: genOrder, match: genMatch };
 
 // 입력은 (card, helpers, form, seed)뿐 — 숨은 입력 없음. scene은 넣지 않는다(표시 단계가 붙임)
-export function generate({ card, helpers = [], form, seed }) {
+export function generate({ card, helpers = [], form, seed, fixed = null }) {
+  if (form === 'fixed') return genFixed({ question: fixed, seed });
   const gen = GEN[form];
   if (!gen) throw new Error(`알 수 없는 form: ${form}`);
   return gen({ card, helpers, seed, rng: makeRng(seed) });
@@ -53,7 +58,7 @@ export async function optionHashes(q) {
 const norm = (s) => String(s).replace(/\s+/g, ' ').trim();
 export function questionKey(q) {
   const sorted = (arr) => (arr || []).map(norm).sort();
-  return canonical({ form: q.form, text: norm(q.text), passage: q.passage ? norm(q.passage) : null,
+  return canonical({ form: q.form, fq: q.fq ?? null, text: norm(q.text), passage: q.passage ? norm(q.passage) : null,
     statements: sorted(q.statements), texts: sorted(displayedTexts(q)),
     pairs: (q.pairs || []).map((p) => p.map(norm)).sort() });
 }
