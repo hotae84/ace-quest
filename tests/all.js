@@ -15,3 +15,4 @@ import './fixed-import.test.js';
 import './fixed-gen.test.js';
 import './fixed-draw.test.js';
 import './app-fixed.test.js';
+import './fx.test.js';

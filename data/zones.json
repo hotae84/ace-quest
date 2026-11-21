@@ -1,7 +1,10 @@
 {
   "contentVersion": "2026-11-21.1",
   "cardFiles": [
-    "cards-z1.json"
+    "cards-z1.json",
+    "cards-z2.json",
+    "cards-z4.json",
+    "cards-z5.json"
   ],
   "zones": [
     {
@@ -67,29 +70,6 @@
       "unit": "Ⅵ-2"
     },
     {
-      "id": "Z3",
-      "title": "전쟁 범죄에 맞선 평화 유지 노력",
-      "pdf": "101~105",
-      "pages": "196~205",
-      "sections": [
-        {
-          "n": 1,
-          "title": "전쟁 범죄가 일어나다",
-          "pages": "196~199"
-        },
-        {
-          "n": 2,
-          "title": "평화를 위해 함께 노력하다",
-          "pages": "200~205"
-        }
-      ],
-      "label": "R4",
-      "group": "exam",
-      "source": "cards",
-      "file": null,
-      "unit": "Ⅵ-3"
-    },
-    {
       "id": "Z4",
       "title": "아시아·아프리카의 민족 운동",
       "pdf": "106~108",
@@ -106,7 +86,7 @@
           "pages": "209~211"
         }
       ],
-      "label": "R5",
+      "label": "R4",
       "group": "exam",
       "source": "cards",
       "file": null,
@@ -114,7 +94,7 @@
     },
     {
       "id": "Z5",
-      "label": "R6",
+      "label": "R5",
       "title": "냉전 체제와 제3세계의 형성",
       "unit": "Ⅶ-1",
       "pdf": "110~114",
