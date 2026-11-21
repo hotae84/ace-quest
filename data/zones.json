@@ -5,6 +5,17 @@
   ],
   "zones": [
     {
+      "id": "F4",
+      "label": "R1",
+      "title": "아시아의 국민 국가 건설 운동",
+      "unit": "Ⅴ-3",
+      "pdf": "84~91",
+      "pages": "162~177",
+      "group": "exam",
+      "source": "fixed",
+      "file": "fixed-f4.json"
+    },
+    {
       "id": "Z1",
       "title": "제1차 세계 대전과 민주주의의 확산",
       "pdf": "93~97",
@@ -25,7 +36,12 @@
           "title": "민주주의가 확산하고 발전하다",
           "pages": "186~189"
         }
-      ]
+      ],
+      "label": "R2",
+      "group": "exam",
+      "source": "cards",
+      "file": null,
+      "unit": "Ⅵ-1"
     },
     {
       "id": "Z2",
@@ -43,7 +59,12 @@
           "title": "제2차 세계 대전이 일어나다",
           "pages": "192~195"
         }
-      ]
+      ],
+      "label": "R3",
+      "group": "exam",
+      "source": "cards",
+      "file": null,
+      "unit": "Ⅵ-2"
     },
     {
       "id": "Z3",
@@ -61,7 +82,12 @@
           "title": "평화를 위해 함께 노력하다",
           "pages": "200~205"
         }
-      ]
+      ],
+      "label": "R4",
+      "group": "exam",
+      "source": "cards",
+      "file": null,
+      "unit": "Ⅵ-3"
     },
     {
       "id": "Z4",
@@ -79,7 +105,78 @@
           "title": "아시아와 아프리카에서 민족 운동이 전개되다",
           "pages": "209~211"
         }
+      ],
+      "label": "R5",
+      "group": "exam",
+      "source": "cards",
+      "file": null,
+      "unit": "Ⅵ-4"
+    },
+    {
+      "id": "Z5",
+      "label": "R6",
+      "title": "냉전 체제와 제3세계의 형성",
+      "unit": "Ⅶ-1",
+      "pdf": "110~114",
+      "pages": "216~223",
+      "group": "exam",
+      "source": "cards",
+      "file": null,
+      "sections": [
+        {
+          "n": 1,
+          "title": "냉전 체제가 형성되다",
+          "pages": "216~217"
+        },
+        {
+          "n": 2,
+          "title": "아시아·아프리카의 여러 나라가 독립하다",
+          "pages": "218~219"
+        },
+        {
+          "n": 3,
+          "title": "제3세계가 등장하다",
+          "pages": "220~221"
+        },
+        {
+          "n": 4,
+          "title": "냉전 체제가 해체되고 새로운 국제 질서가 형성되다(냉전의 완화·소련의 해체까지)",
+          "pages": "222~223"
+        }
       ]
+    },
+    {
+      "id": "F1",
+      "label": "A1",
+      "title": "서아시아와 유럽 사회의 변화",
+      "unit": "Ⅳ-3",
+      "pdf": "64~70",
+      "pages": "122~135",
+      "group": "archive",
+      "source": "fixed",
+      "file": "fixed-f1.json"
+    },
+    {
+      "id": "F2",
+      "label": "A2",
+      "title": "유럽과 아메리카의 국민 국가 체제",
+      "unit": "Ⅴ-1",
+      "pdf": "72~78",
+      "pages": "138~151",
+      "group": "archive",
+      "source": "fixed",
+      "file": "fixed-f2.json"
+    },
+    {
+      "id": "F3",
+      "label": "A3",
+      "title": "유럽의 산업화와 제국주의",
+      "unit": "Ⅴ-2",
+      "pdf": "79~83",
+      "pages": "152~161",
+      "group": "archive",
+      "source": "fixed",
+      "file": "fixed-f3.json"
     }
   ]
 }

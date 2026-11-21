@@ -11,3 +11,4 @@ import './github.test.js';
 import './store.test.js';
 import './app-flow.test.js';
 import './admin.test.js';
+import './fixed-import.test.js';
