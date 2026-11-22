@@ -43,12 +43,13 @@ export function renderResult(app) {
       await animateBar(fill, view.pct0, view.pct1, { motion });
     }
   };
+  // 상자를 먼저 만든다 — 개봉 도중 재렌더링이면 renderCrate가 공개 완료로 복원하므로, 그 뒤에 settled를 판정해야 "?"에 멈추지 않는다(코드 리뷰 v1 Medium)
+  const onRevealed = () => { if (!view.pending && allRevealed() && scoreBox.isConnected && once(`score:${r.id}`)) drawScore(true, true); };
+  const crates = tickets.map((t, i) => renderCrate(t, i, { motion, key: keys[i], onRevealed }));
   const settled = tickets.length === 0 || allRevealed();
   if (view.pending) drawScore(false, false);
   else if (settled) { const first = once(`score:${r.id}`); drawScore(true, first && motion && tickets.length > 0); }
   else drawScore(false, false);
-  const onRevealed = () => { if (allRevealed() && scoreBox.isConnected && once(`score:${r.id}`)) drawScore(true, true); };
-  const crates = tickets.map((t, i) => renderCrate(t, i, { motion, key: keys[i], onRevealed }));
   if (r.ace && r.finished && once(`ace:${r.id}`)) showAce(document.body, agent, { motion, alive: () => st.view === 'result' && st.result?.id === r.id });
   return h('div', { class: 'page result', style: `--ac:${agent.color}` },
     topbar(app, r.finished ? '라운드 결산' : '이탈', { back: null }),

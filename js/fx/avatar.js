@@ -1,5 +1,5 @@
 // 요원 초상 — 라이엇 공식 요원 아이콘(valorant-api.com 배포본, 256px WebP). 비상업 팬 프로젝트용.
-// 로드 실패(오프라인 첫 실행 등)면 onerror로 대체 노드(엠블럼 SVG·이니셜)로 바꾼다.
+// 로드 실패(오프라인 첫 실행 등)면 onerror로 대체 노드(이니셜)로 바꾼다.
 import { h } from '../dom.js';
 
 export const IMAGE_NOTICE = '요원 이미지 © Riot Games. 비상업 팬 프로젝트이며 Riot Games가 보증하거나 후원하지 않습니다.';
